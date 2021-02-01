@@ -1,0 +1,20 @@
+{
+  "name": "boost-inc",
+  "version": "0.0.1",
+  "scripts": {
+    "build": "bsb -make-world",
+    "clean": "bsb -clean-world",
+    "start": "bsb -make-world -w"
+  },
+  "keywords": [
+    "rescript"
+  ],
+  "author": "Diao Zheng",
+  "license": "MIT",
+  "dependencies": {
+    "boost": "file:../boost"
+  },
+  "devDependencies": {
+    "bs-platform": "*"
+  }
+}
