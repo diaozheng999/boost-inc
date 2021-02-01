@@ -1,19 +1,17 @@
-module type Element = sig
-  type t
-  val compare: t -> t -> CmpImpl.ord
-  val isValid: t -> bool
-end
+module Make(Element: Types.Element): Types.Priority_queue
+  with type elt = Element.t
 
-module type Mod = sig
-  type elt
-  type t
-  exception Empty
+module PQ_element: Types.Element
+  with type t = (unit -> unit Js.Promise.t) * Time.t * Time.t
 
-  val empty: unit -> t
-  val isEmpty: t -> bool
-  val findMin: t -> elt option * t
-  val insert: elt -> t -> t
-  val deleteMin: t -> elt * t
-end
+module M: Types.Priority_queue with type elt = PQ_element.t
 
-module Make(Element: Element): Mod with type elt = Element.t
+type t = M.t
+
+val init: unit -> unit
+
+val insert: M.elt -> unit
+
+val findMin: unit -> M.elt option
+
+val deleteMin: unit -> M.elt

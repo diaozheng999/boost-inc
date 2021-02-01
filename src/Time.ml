@@ -9,7 +9,6 @@ type t = timestamp LinkedListImpl.boost_linked_list_node
 
 type __state = { mutable value: timestamp LinkedListImpl.t }
 
-exception Init
 exception Order
 exception Bad_node
 

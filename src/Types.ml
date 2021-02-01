@@ -1,3 +1,20 @@
+module type Element = sig
+  type t
+  val compare: t -> t -> CmpImpl.ord
+  val isValid: t -> bool
+end
+
+module type Priority_queue = sig
+  type elt
+  type t
+  exception Empty
+
+  val empty: unit -> t
+  val isEmpty: t -> bool
+  val findMin: t -> elt option
+  val insert: elt -> t -> t
+  val deleteMin: t -> elt
+end
 
 module type Modifiable = sig
 
