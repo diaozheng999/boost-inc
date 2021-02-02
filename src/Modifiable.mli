@@ -17,8 +17,8 @@ val change': 'a CmpImpl.eq -> 'a modref -> 'a -> unit
 val change'': 'a modref -> 'a -> unit
 
 val deref: 'a modref -> 'a
-val propagate: unit -> unit Js.Promise.t
-val propagateUntil: time -> unit Js.Promise.t
+val propagate: unit -> unit
+val propagateUntil: time -> unit
 
 val latest: time ref
 val finger: time ref

@@ -2,7 +2,7 @@ module Make(Element: Types.Element): Types.Priority_queue
   with type elt = Element.t
 
 module PQ_element: Types.Element
-  with type t = (unit -> unit Js.Promise.t) * Time.t * Time.t
+  with type t = (unit -> unit) * Time.window
 
 module M: Types.Priority_queue with type elt = PQ_element.t
 

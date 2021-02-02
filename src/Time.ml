@@ -6,6 +6,7 @@ type timestamp = {
 }
 
 type t = timestamp LinkedListImpl.boost_linked_list_node
+type window = t * t
 
 type __state = { mutable value: timestamp LinkedListImpl.t }
 
@@ -68,3 +69,5 @@ let spliceOut (start: t) (stop: t) =
     | _ -> ()
 
 let isSplicedOut ({ value={ isSplicedOut } }: t) = isSplicedOut
+
+let compareWindow (l, _) (r, _) = compare l r

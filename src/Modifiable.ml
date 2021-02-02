@@ -1,7 +1,5 @@
-open Infix
-
 type time = Time.t
-type changeable = unit Js.Promise.t
+type changeable = unit
 
 let latest = ref (Time.create ())
 
@@ -11,14 +9,12 @@ let insertTime () =
   let t = Time.add (!latest) in
   latest := t; t
 
-type 'a reader = ('a -> unit Js.Promise.t) * time * time
+type 'a reader = ('a -> unit) * Time.window
 type 'a modval = Empty | Write of 'a * 'a reader list
 type 'a modref = 'a modval ref
 type 'a t = 'a modref
 
 exception UnsetMod
-
-let resolve = Js.Promise.resolve
 
 let empty () = ref Empty
 let create v = ref (Write (v, []))
@@ -31,28 +27,28 @@ let read modr f =
     | Empty -> raise UnsetMod
     | Write(v, _) ->
       let t1 = insertTime () in
-      f v >>| fun () ->
-        let t2 = insertTime () in
-        match !modr with
-          | Write (v, rs) -> (
-            let rs' = (f, t1, t2)::rs in
-            modr := Write(v, rs')
-          )
-          | _ -> raise UnsetMod
+      let _ = f v in
+      let t2 = insertTime () in
+      match !modr with
+        | Write (v, rs) -> (
+          let rs' = (f, (t1, t2))::rs in
+          modr := Write(v, rs')
+        )
+        | _ -> raise UnsetMod
 
-let readAtTime modr ((f, _, _) as r) =
+let readAtTime modr ((f, _) as r) =
   match !modr with
     | Empty -> raise UnsetMod
     | Write(v, rs) -> (modr := Write(v, r::rs); f v)
 
 let addReadersToQ rs modr =
-  let addReader ((_, t1, t2) as r) =
+  let addReader ((_, (t1, t2)) as r) =
     if Time.isSplicedOut t1 then ()
-    else Priority_queue.insert ((fun () -> readAtTime modr r), t1, t2)
+    else Priority_queue.insert ((fun () -> readAtTime modr r), (t1, t2))
   in
   Belt.List.forEach rs addReader
 
-let writeAtom comp modr v =
+let write' comp modr v =
   match !modr with
     | Empty -> modr := Write (v, [])
     | Write (v', rs) ->
@@ -60,8 +56,6 @@ let writeAtom comp modr v =
       else
         (modr := Write (v, []);
         addReadersToQ rs modr)
-
-let write' comp modr v = resolve (writeAtom comp modr v)
 
 let write modr v = write' Box.eq modr v
 
@@ -73,32 +67,32 @@ let deref modr =
 let propagateUntil endTime =
   let rec loop () =
     match Priority_queue.findMin () with
-      | None -> resolve ()
-      | Some(f, start, stop) ->
+      | None -> ()
+      | Some(f, (start, stop)) ->
         if Time.isSplicedOut start then loop ()
-        else if Time.compare endTime stop = CmpImpl.Less then resolve ()
+        else if Time.compare endTime stop = CmpImpl.Less then ()
         else
           let finger' = !finger in
           latest := start;
           finger := stop;
-          f () >>= fun () ->
-            finger := finger';
-            Time.spliceOut (!latest) stop;
-            loop ()
+          f () ;
+          finger := finger';
+          Time.spliceOut (!latest) stop;
+          loop ()
   in loop ()
 
 let propagate () =
   let rec loop () =
     match Priority_queue.findMin () with
-      | None -> resolve ()
-      | Some(f, start, stop) ->
+      | None -> ()
+      | Some(f, (start, stop)) ->
         let finger' = !finger in
         latest := start;
         finger := stop;
-        f () >>= fun () ->
-          finger := finger';
-          Time.spliceOut (!latest) stop;
-          loop ()
+        f ();
+        finger := finger';
+        Time.spliceOut (!latest) stop;
+        loop ()
   in loop ()
 
 let isOutOfFrame start stop =
@@ -112,10 +106,10 @@ let init () =
   latest := Time.create ();
   Priority_queue.init ()
 
-let change l v = writeAtom Box.eq l v
+let change l v = write' Box.eq l v
 
-let change' comp l v = writeAtom comp l v
+let change' comp l v = write' comp l v
 
 let never _ _ = false
 
-let change'' l v = writeAtom never l v
+let change'' l v = write' never l v

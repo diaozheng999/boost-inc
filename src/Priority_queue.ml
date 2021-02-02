@@ -34,9 +34,9 @@ module Make(Element : Types.Element) = struct
 end
 
 module PQ_element = struct
-  type t = (unit -> unit Js.Promise.t) * Time.t * Time.t
-  let compare (_, sa, _) (_, sb, _) = Time.compare sa sb
-  let isValid (_, s, _) = not (Time.isSplicedOut s)
+  type t = (unit -> unit) * Time.window
+  let compare (_, sa) (_, sb) = Time.compareWindow sa sb
+  let isValid (_, (s, _)) = not (Time.isSplicedOut s)
 end
 
 module M = Make(PQ_element)
