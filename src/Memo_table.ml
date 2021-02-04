@@ -2,7 +2,7 @@ type 'a entry = ('a * Time.window option) option ref
 
 type ('k, 'v) js_map
 
-type 'a memotable = (int, 'a entry) js_map
+type 'a memotable = (Box.index, 'a entry) js_map
 type 'a t = 'a memotable
 
 external create: unit -> 'a memotable = "Map" [@@bs.new]

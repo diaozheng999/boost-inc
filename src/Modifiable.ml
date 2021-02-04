@@ -1,11 +1,9 @@
-open Basis
-
 type time = Time.t
 type changeable = unit
 
-let latest = ref (Time.create ())
+let latest = ref (Time.create ()) [@@unboxed]
 
-let finger = ref (!latest)
+let finger = ref (!latest) [@@unboxed]
 
 let insertTime () =
   let t = Time.add (!latest) in
@@ -85,12 +83,9 @@ let propagateUntil endTime =
 
 let propagate () =
   let rec loop () =
-    let _ = Js.log "propagate loop" in
-    let _ = Time.describeTime () in
     match Priority_queue.findMin () with
       | None -> ()
       | Some(f, (start, stop)) ->
-        let _ = Js.log4 "node" (toString f) (Time.toString start) (Time.toString stop) in
         let finger' = !finger in
         latest := start;
         finger := stop;

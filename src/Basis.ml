@@ -9,3 +9,5 @@ let rec eq al bl =
         if a = b then eq a' b' else false
 
 external toString: 'a -> string = "toString" [@@bs.send]
+
+external hash: 'a -> int = "hash" [@@bs.module "boost/dist/esm/common/index.js"]
