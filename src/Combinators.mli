@@ -16,3 +16,7 @@ val mkLiftCC2:
   'b eq -> 'c eq -> 'd eq 
     -> int list -> 'b -> 'c
     -> ('b modref -> 'c modref -> 'd cc) -> 'd cc
+
+val (>>=): 'a modref -> ('a -> 'b cc) -> 'b cc
+
+val log: 'a modref -> unit

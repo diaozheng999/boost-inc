@@ -1,3 +1,5 @@
+open Basis
+
 type time = Time.t
 type changeable = unit
 
@@ -83,9 +85,12 @@ let propagateUntil endTime =
 
 let propagate () =
   let rec loop () =
+    let _ = Js.log "propagate loop" in
+    let _ = Time.describeTime () in
     match Priority_queue.findMin () with
       | None -> ()
       | Some(f, (start, stop)) ->
+        let _ = Js.log4 "node" (toString f) (Time.toString start) (Time.toString stop) in
         let finger' = !finger in
         latest := start;
         finger := stop;
@@ -113,3 +118,8 @@ let change' comp l v = write' comp l v
 let never _ _ = false
 
 let change'' l v = write' never l v
+
+let observe modr f =
+    match !modr with
+      | Empty -> raise UnsetMod
+      | Write(v, _) -> f v

@@ -9,22 +9,22 @@ type boost_linked_list<'a>
 type t<'a> = boost_linked_list<'a>
 type node<'a> = boost_linked_list_node<'a>
 
-@bs.module("boost/ds") @bs.scope("LinkedList")
+@bs.module("boost/dist/esm/ds/index.js") @bs.scope("LinkedList")
 external ofArray: array<'a> => t<'a> = "ofArray"
 
-@bs.module("boost/ds") @bs.scope("LinkedList")
+@bs.module("boost/dist/esm/ds/index.js") @bs.scope("LinkedList")
 external compare: CmpImpl.abs_compare<'a> => CmpImpl.abs_compare<t<'a>> = "compare"
 
-@bs.module("boost/ds") @bs.scope("LinkedList")
+@bs.module("boost/dist/esm/ds/index.js") @bs.scope("LinkedList")
 external eq: CmpImpl.eq<'a> => CmpImpl.eq<t<'a>> = "eq"
 
 @bs.send external head: t<'a> => option<node<'a>> = "head"
 @bs.send external tail: t<'a> => option<node<'a>> = "tail"
 
-@bs.module("boost/ds") @bs.new
+@bs.module("boost/dist/esm/ds/index.js") @bs.new
 external init: () => t<'a> = "LinkedList"
 
-@bs.module("boost/ds") @bs.new
+@bs.module("boost/dist/esm/ds/index.js") @bs.new
 external segment: (~head:node<'a>, ~tail:node<'a>) => t<'a> = "LinkedList"
 
 @bs.send external removeFromFront: t<'a> => option<'a> = "removeFromFront"

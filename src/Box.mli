@@ -1,4 +1,4 @@
-type index
+type index = int
 type 'a t
 
 val init: unit -> unit

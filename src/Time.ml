@@ -1,7 +1,8 @@
-open CmpImpl
+open Basis
 
 type timestamp = {
   at: float;
+  sub: float;
   mutable isSplicedOut: bool;
 }
 
@@ -10,12 +11,11 @@ type window = t * t
 
 type __state = { mutable value: timestamp LinkedListImpl.t }
 
-exception Order
-exception Bad_node
+exception BadNode
 
 let list: __state = { value = LinkedListImpl.init () }
   
-let now () = { at = Js.Date.now (); isSplicedOut = false }
+let now () = { at = Js.Date.now (); sub = 0.; isSplicedOut = false }
 
 let getNext ({ next }: t) = next
 
@@ -24,45 +24,48 @@ let create () =
   LinkedListImpl.addToEnd list.value timestamp
 
 let compare (a: t) (b: t) =
-  if a = b then Equal else
+  if a == b then Equal else
   match ordFromJs (num a.value.at b.value.at) with
-    | Equal -> 
-      let rec compareUp (c: t) ifNone =
-        if c.value.at > a.value.at then ifNone a
-        else if c = b then Less
-        else match c.next with
-          | Some c' -> compareUp c' ifNone
-          | _ -> raise Order in
-      let rec compareDown (c: t) =
-        if c.value.at < a.value.at then raise Order
-        else if c = b then Greater
-        else match c.prev with
-          | Some c' -> compareDown c'
-          | _ -> raise Order in
-      compareUp a compareDown
+    | Equal -> ordFromJs (num a.value.sub b.value.sub)
     | cmp -> cmp
+
+external __unsafe_inline : float -> string = "%identity"
+ 
+let toString (t: t) = ((__unsafe_inline t.value.at) ^ "|") ^ (__unsafe_inline t.value.sub)
 
 let add (a: t) =
   match a.next with
     | Some(next) ->
-      let at = ((a.value.at +. next.value.at) /. 2.) in
-      let timestamp = { at; isSplicedOut = false } in
-      LinkedListImpl.addAfter list.value a timestamp
-    | None -> LinkedListImpl.addToEnd list.value (now ())
+      if a.value.at == next.value.at then
+        let sub = (a.value.sub +. next.value.sub) /. 2. in
+        let timestamp = { at = a.value.at; sub; isSplicedOut = false } in
+        LinkedListImpl.addAfter list.value a timestamp
+      else
+        let at = ((a.value.at +. next.value.at) /. 2.) in
+        let timestamp = { at; sub = 0.; isSplicedOut = false } in
+        LinkedListImpl.addAfter list.value a timestamp
+    | None ->
+      let at = Js.Date.now () in
+      if at = a.value.at then
+        let timestamp = { at; sub = a.value.sub +. 1.; isSplicedOut = false } in
+        LinkedListImpl.addToEnd list.value timestamp
+      else
+        let timestamp = { at; sub = 0.; isSplicedOut = false } in
+        LinkedListImpl.addToEnd list.value timestamp
 
 let init () =
   list.value <- LinkedListImpl.init ()
 
 let spliceOut (start: t) (stop: t) =
   let rec deleteRange (next: t) =
-    if next = stop then ()
+    if next == stop then ()
     else
       let nextnext = next.next in
       LinkedListImpl.removeNode list.value next;
       next.value.isSplicedOut <- true;
       match nextnext with
         | Some(n) -> deleteRange n
-        | None -> raise Bad_node
+        | None -> raise BadNode
   in
   match compare start stop with
     | Less -> deleteRange(start)
@@ -71,3 +74,7 @@ let spliceOut (start: t) (stop: t) =
 let isSplicedOut ({ value={ isSplicedOut } }: t) = isSplicedOut
 
 let compareWindow (l, _) (r, _) = compare l r
+
+external toArray: 'a LinkedListImpl.t -> 'a array = "from" [@@bs.val][@@bs.scope "Array"]
+
+let describeTime () = Js.log (toArray list.value)

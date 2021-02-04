@@ -49,7 +49,7 @@ let lift (p1, p2) eqb key b f =
   let f' () =
     let r = Modifiable.empty () in
     fun b ->
-      Meta.change' eqb r b;
+      Meta_.change' eqb r b;
       memoize p2 key (fun _ -> f r)
   in memoize p1 key f' b
 
@@ -81,3 +81,7 @@ let mkLiftCC2 eqb eqc eqd =
     in lift (create_pad ()) eqb arg b staged
   in
   lifted
+
+let (>>=) = read
+
+let log modr = Modifiable.observe modr Js.Console.log

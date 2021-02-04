@@ -1,10 +1,10 @@
 type boost_heap<'e, 'p>
 type boost_heap_node<'e, 'p> = ('p, 'e)
 
-@bs.new @bs.module("boost/ds")
+@bs.new @bs.module("boost/dist/esm/ds/index.js")
 external init: () => boost_heap<'e, 'p> = "Heap"
 
-@bs.new @bs.module("boost/ds")
+@bs.new @bs.module("boost/dist/esm/ds/index.js")
 external initWithComparison: CmpImpl.abs_compare<'p> => boost_heap<'e, 'p> = "Heap"
 
 @bs.send

@@ -24,3 +24,5 @@ val latest: time ref
 val finger: time ref
 
 val isOutOfFrame: time -> time -> bool
+
+val observe: 'a modref -> ('a -> 'b) -> 'b
