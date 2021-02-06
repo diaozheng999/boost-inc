@@ -42,3 +42,20 @@ let _ = log ()
 let _ = Meta_.propagate ()
 let _ = Js.Console.log "a=2 b=2, after propagate"
 let _ = log ()
+
+let out3 = map a ~f:(fun a -> a + 2)
+
+let log' () =
+  Var.log ~l:"a" a;
+  Var.log ~l:"out3" out3
+
+let _ = Js.Console.log "before: a=1"
+let _ = log' ()
+
+let _ = a.changeEagerly 2
+let _ = Js.Console.log "after: a=2"
+let _ = log' ()
+
+let _ = a.changeEagerly 1
+let _ = Js.Console.log "memo: a=1"
+let _ = log' ()
