@@ -9,11 +9,9 @@ type timestamp = {
 type t = timestamp LinkedListImpl.boost_linked_list_node
 type window = t * t
 
-type __state = { mutable value: timestamp LinkedListImpl.t }
-
 exception BadNode
 
-let list: __state = { value = LinkedListImpl.init () }
+let list = ref (LinkedListImpl.init ())
   
 let now () = { at = Js.Date.now (); sub = 0.; isSplicedOut = false }
 
@@ -21,7 +19,7 @@ let getNext ({ next }: t) = next
 
 let create () =
   let timestamp = now () in
-  LinkedListImpl.addToEnd list.value timestamp
+  LinkedListImpl.addToEnd (!list) timestamp
 
 let compare (a: t) (b: t) =
   if a == b then Equal else
@@ -30,8 +28,12 @@ let compare (a: t) (b: t) =
     | cmp -> cmp
 
 external __unsafe_inline : float -> string = "%identity"
- 
+
+external toArray: 'a LinkedListImpl.t -> 'a array = "from" [@@bs.val][@@bs.scope "Array"]
+
 let toString (t: t) = ((__unsafe_inline t.value.at) ^ "|") ^ (__unsafe_inline t.value.sub)
+
+let describeTime () = Js.log (toArray (!list))
 
 let add (a: t) =
   match a.next with
@@ -39,32 +41,33 @@ let add (a: t) =
       if a.value.at == next.value.at then
         let sub = (a.value.sub +. next.value.sub) /. 2. in
         let timestamp = { at = a.value.at; sub; isSplicedOut = false } in
-        LinkedListImpl.addAfter list.value a timestamp
+        LinkedListImpl.addAfter (!list) a timestamp
       else
         let at = ((a.value.at +. next.value.at) /. 2.) in
         let timestamp = { at; sub = 0.; isSplicedOut = false } in
-        LinkedListImpl.addAfter list.value a timestamp
+        LinkedListImpl.addAfter (!list) a timestamp
     | None ->
       let at = Js.Date.now () in
       if at = a.value.at then
         let timestamp = { at; sub = a.value.sub +. 1.; isSplicedOut = false } in
-        LinkedListImpl.addToEnd list.value timestamp
+        LinkedListImpl.addToEnd (!list) timestamp
       else
         let timestamp = { at; sub = 0.; isSplicedOut = false } in
-        LinkedListImpl.addToEnd list.value timestamp
+        LinkedListImpl.addToEnd (!list) timestamp
 
 let init () =
-  list.value <- LinkedListImpl.init ()
+  list := LinkedListImpl.init ()
 
 let spliceOut (start: t) (stop: t) =
   let rec deleteRange (next: t) =
     if next == stop then ()
     else
       let nextnext = next.next in
-      LinkedListImpl.removeNode list.value next;
+      LinkedListImpl.removeNode (!list) next;
       next.value.isSplicedOut <- true;
       match nextnext with
-        | Some(n) -> deleteRange n
+        | Some(n) -> 
+          deleteRange n
         | None -> raise BadNode
   in
   match compare start stop with
@@ -74,7 +77,3 @@ let spliceOut (start: t) (stop: t) =
 let isSplicedOut ({ value={ isSplicedOut } }: t) = isSplicedOut
 
 let compareWindow (l, _) (r, _) = compare l r
-
-external toArray: 'a LinkedListImpl.t -> 'a array = "from" [@@bs.val][@@bs.scope "Array"]
-
-let describeTime () = Js.log (toArray list.value)

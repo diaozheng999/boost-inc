@@ -13,6 +13,7 @@ let create = Modifiable.create
 
 let memoize pad key f =
   let run_memoized f r =
+    let _ = Js.Console.log "run_memoized" in
     let t1 = !(Modifiable.latest) in
     let v = f () in
     let t2 = !(Modifiable.latest) in
@@ -24,6 +25,9 @@ let memoize pad key f =
           r := Some(v, Some(nt1, t2))
         else
           r := Some(v, None));
+    Js.Console.log "ran";
+    Memo_table.set pad key r;
+    Js.Console.log2 "updated memotable, new table" pad;
     v
   in
 
@@ -40,10 +44,16 @@ let memoize pad key f =
           | None -> v
           | Some(window) -> reuse_result window; v
   in
-
+  let _ = Js.Console.log2 "pad=" pad in
   memoize' (Memo_table.find pad key (!Modifiable.latest))
 
-let create_pad () = (Memo_table.create (), Memo_table.create ())
+let mk_pad () =
+  let p = Memo_table.create () in
+  p
+
+let create_pad () =
+  Js.Console.log "creating pad";
+  (mk_pad (), mk_pad ())
 
 let lift (p1, p2) eqb key b f =
   let f' () =
@@ -62,11 +72,13 @@ let mkLift2 eqb eqc key b c f =
   mkLift eqb key b staged
 
 let mkLiftCC eqb eqd =
+  let _ = Js.Console.log "mkLiftCC" in
+  let pad = create_pad () in
   let lifted arg b f =
     let f' b =
       let r = modref (f b) in
       read r (write' eqd)
-    in lift (create_pad ()) eqb arg b f'
+    in lift pad eqb arg b f'
   in
   lifted
 

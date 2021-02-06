@@ -4,7 +4,7 @@ module Var = Var
 
 let lift (b: 'b Var.t) ~f =
   let lift = mkLiftCC Box.eq Box.eq in
-  let lifted av = lift [Box.indexOf av] av f in
+  let lifted av = lift (Box.indexOf av) av f in
   fun () -> b.modref >>= lifted
 
 let map (a: 'a Var.t) ~f =

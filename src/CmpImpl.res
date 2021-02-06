@@ -11,16 +11,16 @@ type compare<'a> = 'a => 'a => ord
 type eq<'a> = 'a => 'a => bool
 
 @bs.module("boost/dist/esm/common/index.js") @bs.scope("compare")
-external int: @bs.uncurry(2) int => int => abs_ord = "int"
+external int: int => int => abs_ord = "int"
 
 @bs.module("boost/dist/esm/common/index.js") @bs.scope("compare")
-external num: @bs.uncurry(2) float => float => abs_ord = "num"
+external num: float => float => abs_ord = "num"
 
 @bs.module("boost/dist/esm/common/index.js") @bs.scope("compare")
-external str: @bs.uncurry(2) string => string => abs_ord = "str"
+external str: string => string => abs_ord = "str"
 
 @bs.module("boost/dist/esm/common/index.js") @bs.scope("compare")
-external bool: @bs.uncurry(2) bool => bool => abs_ord = "bool"
+external bool: bool => bool => abs_ord = "bool"
 
 @bs.module("boost/dist/esm/common/index.js") @bs.scope("compare")
 external negate: abs_compare<'a> => abs_compare<'a> = "negate"

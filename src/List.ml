@@ -30,7 +30,7 @@ let filter f l =
     match c with
       | Nil -> write Nil
       | Cons(h, t) ->
-        t >>= fun ct -> lift [Box.indexOf h] ct (fun t ->
+        t >>= fun ct -> lift (Box.indexOf h) ct (fun t ->
           if f h then write (Cons(h, modref (t >>= filterM)))
           else t >>= (fun ct -> filterM ct)
         )
@@ -52,7 +52,7 @@ let combine binOp l =
       in match c with
           | Nil -> write Nil
           | Cons(h, t) -> t >>= fun ct ->
-            lift [Box.indexOf h] ct (fun t -> t >>= fun ct ->
+            lift (Box.indexOf h) ct (fun t -> t >>= fun ct ->
               let p = modref (sumRun h ct) in
               p >>= fun (v, ct') -> write (Cons(v, modref (half ct'))))
     in modref (l >>= fun c -> half c)
