@@ -34,11 +34,11 @@ let createVar ?(eq=Box.eq) create v =
 
 let create ?(label="var") = createVar (Box.create ~label)
 
-let int = createVar (Box.fromInt)
+let int = createVar Box.fromInt
 
-let opt o = createVar (Box.fromOption) o
+let opt o = createVar Box.fromOption o
 
-let str = createVar (Box.fromString)
+let str s = createVar Box.fromString s
 
 let ofCombinator (r: 'a cc) =
   let inst = modref r in
@@ -46,4 +46,10 @@ let ofCombinator (r: 'a cc) =
 
 let observe ~f (v: 'a var) = Modifiable.observe v.modref f
 
-let log v = observe ~f:Js.Console.log v
+let log ?l v =
+  let f v =
+    match l with
+      | Some label -> Js.Console.log2 label v
+      | None -> Js.Console.log v
+  in
+  observe ~f v

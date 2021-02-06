@@ -9,7 +9,7 @@ external create: unit -> 'a memotable = "Map" [@@bs.new]
 
 external get: ('k, 'v) js_map -> 'k -> 'v option = "get" [@@bs.send]
 
-let rec find' table list time current =
+let rec find' (table: 'a t) list time current =
   match list with
     | [] -> current
     | k::ks ->

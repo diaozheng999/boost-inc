@@ -46,4 +46,4 @@ let valueOf { value } = value
 
 let indexOf { label } = label
 
-let fromString = fromPrim "%s"
+let fromString a = fromPrim "%s" a

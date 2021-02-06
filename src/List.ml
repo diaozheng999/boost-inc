@@ -1,3 +1,4 @@
+open Basis
 open Combinators
 
 type 'a cell = Nil | Cons of 'a * 'a cell modref
@@ -34,8 +35,6 @@ let filter f l =
           else t >>= (fun ct -> filterM ct)
         )
   in modref l >>= filterM
-
-external hash: 'a -> int = "hash" [@@bs.module "boost/common"]
 
 let combine binOp l =
   let halfList l =

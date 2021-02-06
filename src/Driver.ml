@@ -17,23 +17,28 @@ let c = Var.int 3
 
 let out2 = map2 out c ~f:(fun a b -> a * b)
 
-let _ = Var.log a
-let _ = Var.log b
-let _ = Var.log out
-let _ = Var.log out2
+let log () =
+  Var.log ~l:"a" a;
+  Var.log ~l:"b" b;
+  Var.log ~l:"c" c;
+  Var.log ~l:"out" out;
+  Var.log ~l:"out2" out2
+
+let _ = Js.Console.log "before: a=1 b=2"
+let _ = log ()
 
 let _ = a.change 2
-
-let _ = Var.log a
-let _ = Var.log b
-let _ = Var.log out
-let _ = Var.log out2
+let _ = Js.Console.log "a=2 b=2, before propagate"
+let _ = log ()
 
 let _ = Meta_.propagate ()
 
-let _ = Var.log a
-let _ = Var.log b
-let _ = Var.log out
-let _ = Var.log out2
+let _ = Js.Console.log "a=2 b=2, after propagate"
+let _ = log ()
 
-let _ = Js.Console.log out
+let _ = a.change 1
+let _ = Js.Console.log "a=2 b=2, before propagate"
+let _ = log ()
+let _ = Meta_.propagate ()
+let _ = Js.Console.log "a=2 b=2, after propagate"
+let _ = log ()
