@@ -13,7 +13,7 @@ val read: 'b modref -> ('b -> 'a cc) -> 'a cc
 val memoize: 'a Memo_table.t -> Box.index -> (unit -> 'a) -> 'a
 val mkLift: 'b eq -> Box.index -> 'b -> ('b modref -> 'd) -> 'd
 val mkLift2: 'b eq -> 'c eq -> Box.index -> 'b -> 'c -> ('b modref -> 'c modref -> 'd) -> 'd
-val mkLiftCC: 'b eq -> 'd eq -> Box.index -> 'b -> ('b modref -> 'd cc) -> 'd cc
+val mkLiftCC: ?fname:string -> 'b eq -> 'd eq -> Box.index -> 'b -> ('b modref -> 'd cc) -> 'd cc
 val mkLiftCC2:
   'b eq -> 'c eq -> 'd eq 
     -> Box.index -> 'b -> 'c

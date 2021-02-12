@@ -1,3 +1,6 @@
+open Basis
+open Flags
+
 type time = Time.t
 type changeable = unit
 
@@ -16,11 +19,34 @@ type 'a t = 'a modref
 
 exception UnsetMod
 
-let empty () = ref Empty
-let create v = ref (Write (v, []))
+
+let inspectReader (_, (f, t)) ~depth ~options =
+  if depth < 0 then options.stylize "[reader]" "special" else
+    let f = inspectWithOptions f options in
+    let t = inspectWithOptions t options in
+    Format.sprintf "reader from %s to %s" f t
+
+let inspectModval v ~depth ~options =
+  match v with
+    | Empty -> options.stylize "Empty" "undefined"
+    | Write(v, l) ->
+      let vstr = inspectWithOptions v options in
+      let lstr = inspectList inspectReader l ~depth ~options in
+      Format.sprintf "{ value=%s, readers=%s }" vstr lstr
+
 let modref f =
   let r = ref Empty in
-  f r |> ignore; r
+  f r |> ignore;
+  if pretty_output then setInspector r (inspectRef inspectModval r) else r
+
+
+let empty () =
+  let r = ref Empty in
+  if pretty_output then setInspector r (inspectRef inspectModval r) else r
+
+let create v = 
+  let r = ref (Write (v, [])) in
+  if pretty_output then setInspector r (inspectRef inspectModval r) else r
 
 let read modr f =
   match !modr with

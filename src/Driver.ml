@@ -2,9 +2,9 @@ open Combinators
 open Inc
 
 let a = Var.int 1
-(*
 let b = Var.int 2
 
+(*
 let add a b =
   a >>= fun av -> b >>= fun bv ->
     let a = Box.valueOf av in
@@ -49,13 +49,23 @@ let log' () =
   Var.log ~l:"a" a;
   Var.log ~l:"out3" out3
 
-let _ = Js.Console.log "before: a=1"
+let _ = Js.Console.log "\n\n====== before: a=1 ======\n"
 let _ = log' ()
 
+let _ = Js.Console.log "\n\n====== after: a=2 ======\n"
 let _ = a.changeEagerly 2
-let _ = Js.Console.log "after: a=2"
 let _ = log' ()
 
+let _ = Js.Console.log "\n\n====== memo: a=1 ======\n"
 let _ = a.changeEagerly 1
-let _ = Js.Console.log "memo: a=1"
 let _ = log' ()
+
+let _ = Js.Console.log "\n\n====== after: a=2 ======\n"
+let _ = a.changeEagerly 2
+let _ = log' ()
+
+let _ = Js.Console.log "\n\n====== after memo: a=1======\n"
+let _ = a.changeEagerly 1
+let _ = log' ()
+
+let _ = Js.log a

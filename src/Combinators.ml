@@ -18,12 +18,17 @@ let modref = Modifiable.modref
 let create = Modifiable.create
 
 let memoize pad key f =
+  let _ = if debug then Js.Console.log2 "memoize: called on pad" pad else () in
   let run_memoized f r =
-    let _ = if debug then Js.log "run_memoized" else () in
+    let _ = if debug then Js.log4 "memoize.run_memoized: called with entry" r "pad" pad else () in
     let t1 = !(Modifiable.latest) in
     let v = f () in
     let t2 = !(Modifiable.latest) in
     let nt1o = Time.getNext t1 in
+    if debug then Js.log "memoize.run_memoized: executed f with following results:";
+    if debug then Js.log2 "    t1" t1;
+    if debug then Js.log2 "    t2" t2;
+    if debug then Js.log2 "  nt1o" nt1o;
     (match nt1o with
       | None -> r := Some(v, None)
       | Some(nt1) ->
@@ -31,7 +36,7 @@ let memoize pad key f =
           r := Some(v, Some(nt1, t2))
         else
           r := Some(v, None));
-    if debug then Js.Console.log "ran" else ();
+    if debug then Js.Console.log2 "memoize.run_memoized: updated modref" r;
     Memo_table.set pad key r;
     if debug then Js.Console.log2 "updated memotable, new table" pad else ();
     v
@@ -51,13 +56,28 @@ let memoize pad key f =
           | None -> v
           | Some(window) -> reuse_result window; v
   in
-  let _ = if debug then Js.Console.log2 "pad=" pad else () in
   memoize' (Memo_table.find pad key (!Modifiable.latest))
 
-let create_pad () = (Memo_table.create (), Memo_table.create ())
+let create_pad ?name () = 
+  match debug, name with
+    | true, Some name ->
+    (
+      Memo_table.create ~name:(name ^ "$input") (),
+      Memo_table.create ~name:(name ^ "$output") ()
+    )
+    | true, _ ->
+      let uniq = Box.getLabel ~label:"Pad" () |> Box.uniq_to_string in 
+      (
+        Memo_table.create ~name:(uniq ^ "$input") (),
+        Memo_table.create ~name:(uniq ^ "$output") ()
+      )
+    | _ -> (Memo_table.create (), Memo_table.create ())
 
 let lift (p1, p2) eqb key b f =
+  let _ = if debug then Js.log4 "lift: called with key" key "value" b else () in
+  let _ = if debug then Js.log2 "lift: current time" (!Modifiable.latest) in
   let f' () =
+    let _ = if debug then Js.log "lift.f': called" in
     let r = Modifiable.empty () in
     fun b ->
       Meta_.change' eqb r b;
@@ -72,11 +92,14 @@ let mkLift2 eqb eqc key b c f =
   in
   mkLift eqb key b staged
 
-let mkLiftCC eqb eqd =
-  let _ = if debug then Js.Console.log "mkLiftCC" else () in
-  let pad = create_pad () in
+let mkLiftCC ?fname eqb eqd =
+  let _ = if debug then Js.log2 "mkLiftCC: created lifter for" fname else () in
+  let pad = create_pad ?name:fname () in
   let lifted arg b f =
+    let _ = if debug then Js.log3 "mkLiftCC.lifted: called with" arg b else () in
+    let _ = if debug then Js.log2 "mkLiftCC.lifted: current time" (!Modifiable.latest) in
     let f' b =
+      let _ = if debug then Js.log3 "mkLiftCC.lifted.f': called with " b arg in
       let r = modref (f b) in
       read r (write' eqd)
     in lift pad eqb arg b f'

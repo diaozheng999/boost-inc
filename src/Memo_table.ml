@@ -27,21 +27,17 @@ let reduce m ~filter f init =
   forEach m (fun v k -> if filter k then acc := (f (!acc) k v));
   !acc
 
-let rec inspectElement ~options e acc =
-  match e with
-    | [] -> acc
-    | e::el ->
-      let reader = match !e with
-        | Some (_, None) ->
-            options.stylize "undefined" "undefined"
-            |> Format.sprintf "reader at %s time" 
-        | Some (_, Some (f, t)) ->
-            let f = inspectWithOptions f options in
-            let t = inspectWithOptions t options in
-            Format.sprintf "reader from %s to %s" f t
-        | _ -> options.stylize "spliced out" "undefined"
-      in
-      inspectElement ~options el (Format.sprintf "\n    %s" reader)
+let rec inspectElement e ~depth ~options =
+  if depth < 0 then options.stylize "[reader]" "special" else
+    match !e with
+    | Some (_, None) ->
+        options.stylize "undefined" "undefined"
+        |> Format.sprintf "reader at %s time" 
+    | Some (_, Some (f, t)) ->
+        let f = inspectWithOptions f options in
+        let t = inspectWithOptions t options in
+        Format.sprintf "reader from %s to %s" f t
+    | _ -> options.stylize "spliced out" "undefined"
 
 
 let inspect t ~depth ~options =
@@ -51,15 +47,16 @@ let inspect t ~depth ~options =
     | None -> Printf.sprintf "Memotable (%s)" instance
     | Some name -> Printf.sprintf "%s (%s)" (options.stylize name "special") instance
   in
-  let childOptions = { stylize = options.stylize; depth = depth - 1 } in
+  let childDepth = depth - 1 in
+  let childOptions = reduceDepth options in
   let filter k =
     k != Box.as_uniq "$$instance" && k != Box.as_uniq "$$name"
   in
 
   let inspectChild acc k v =
     let formattedK = options.stylize (Box.uniq_to_string k) "string" in
-    let formattedV = inspectElement v ~options:childOptions "" in
-    Format.sprintf "%s\n  %s => [%s\n  ]" acc formattedK formattedV
+    let formattedV = inspectList inspectElement v ~depth:childDepth ~options:childOptions  in
+    Format.sprintf "%s\n  %s => %s" acc formattedK formattedV
   in
 
   let values = reduce t ~filter inspectChild "" in
@@ -92,7 +89,8 @@ let rec find' list time current =
               | CmpImpl.Less -> find' ks t e
               | _ -> find' ks time current
           )
-       |  _ -> find' ks time current
+        | Some(_, None) -> e
+        |  _ -> find' ks time current
 
 let find table key time =
   match get table key with

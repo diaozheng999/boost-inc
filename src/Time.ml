@@ -1,4 +1,5 @@
 open Basis
+open Flags
 
 type timestamp = {
   at: float;
@@ -13,7 +14,7 @@ exception BadNode
 
 let list = ref (LinkedListImpl.init ())
   
-let now () = { at = Js.Date.now (); sub = 0.; isSplicedOut = false }
+let now () = { at = if real_time then Js.Date.now () else 0.; sub = 0.; isSplicedOut = false }
 
 let getNext ({ next }: t) = next
 
@@ -54,7 +55,7 @@ let add (a: t) =
         let timestamp = { at; sub = 0.; isSplicedOut = false } in
         LinkedListImpl.addAfter (!list) a timestamp |> setInspector
     | None ->
-      let at = Js.Date.now () in
+      let at = if real_time then Js.Date.now () else 0. in
       if at = a.value.at then
         let timestamp = { at; sub = a.value.sub +. 1.; isSplicedOut = false } in
         LinkedListImpl.addToEnd (!list) timestamp |> setInspector

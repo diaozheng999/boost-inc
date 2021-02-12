@@ -28,8 +28,8 @@ let prim k n = as_uniq (k ^ string_of_int n)
 
 let inspect box ~depth:_ ~options =
   let child = inspectWithOptions box.value options in
-  let label = options.stylize (uniq_to_string box.label) "special" in
-  Format.sprintf "{ %s: %s }" label child
+  let label = options.stylize (uniq_to_string box.label) "string" in
+  Format.sprintf "[Box %s: %s ]" label child
 
 let create ?label v =
   let label = getLabel ?label () in
