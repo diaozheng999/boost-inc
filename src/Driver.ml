@@ -2,7 +2,7 @@ open Combinators
 open Inc
 
 let a = Var.int 1
-
+(*
 let b = Var.int 2
 
 let add a b =
@@ -42,7 +42,7 @@ let _ = log ()
 let _ = Meta_.propagate ()
 let _ = Js.Console.log "a=2 b=2, after propagate"
 let _ = log ()
-
+*)
 let out3 = map a ~f:(fun a -> a + 2)
 
 let log' () =

@@ -1,4 +1,5 @@
 open Basis
+open Flags
 
 type unique_gen
 type unique
@@ -14,6 +15,8 @@ external uniq: unique_gen -> unique = "value" [@@bs.get]
 
 external as_uniq: string -> unique = "%identity"
 
+external uniq_to_string: unique -> string = "%identity"
+
 let getLabel ?(label="loc") () =
    let gen = (ugen_with_label label) in
    uniq gen
@@ -23,22 +26,32 @@ let init () = ()
 
 let prim k n = as_uniq (k ^ string_of_int n)
 
+let inspect box ~depth:_ ~options =
+  let child = inspectWithOptions box.value options in
+  let label = options.stylize (uniq_to_string box.label) "special" in
+  Format.sprintf "{ %s: %s }" label child
+
 let create ?label v =
   let label = getLabel ?label () in
-  { label; value = v }
+  let box = { label; value = v } in
+  if pretty_output then setInspector box (inspect box) else box
 
 let fromPrim k value =
   let label = prim k (hash value) in
-  { label; value }
+  let box = { label; value } in
+  if pretty_output then setInspector box (inspect box) else box
 
 let fromInt i =
   let label = prim "%i" i in
-  { label; value = i }
+  let box = { label; value = i } in
+  if pretty_output then setInspector box (inspect box) else box
 
 let fromOption ob =
   match ob with
     | None -> fromPrim "%o" ob
-    | Some( { label }) -> { label; value = ob }
+    | Some( { label }) ->
+      let box = { label; value = ob } in
+      if pretty_output then setInspector box (inspect box) else box
 
 let eq {label = ka} {label = kb} = ka == kb
 

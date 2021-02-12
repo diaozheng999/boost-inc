@@ -1,3 +1,6 @@
+open Basis
+open Flags
+
 type 'a entry = ('a * Time.window option) option ref
 
 type ('k, 'v) js_map
@@ -13,10 +16,63 @@ external set': ('k, 'v) js_map -> 'k -> 'v -> unit = "set" [@@bs.send]
 
 external setOneUnsafe: ('k, 'v) js_map -> string -> Box.unique -> unit = "set" [@@bs.send]
 
-let create () =
+external getUnsafe: ('k, 'v) js_map -> string -> string = "get" [@@bs.send]
+
+external getOptUnsafe: ('k, 'v) js_map -> string -> string option = "get" [@@bs.send]
+
+external forEach: ('k, 'v) js_map -> ('v -> 'k -> unit [@bs.uncurry 2]) -> unit = "forEach" [@@bs.send]
+
+let reduce m ~filter f init =
+  let acc = ref init in
+  forEach m (fun v k -> if filter k then acc := (f (!acc) k v));
+  !acc
+
+let rec inspectElement ~options e acc =
+  match e with
+    | [] -> acc
+    | e::el ->
+      let reader = match !e with
+        | Some (_, None) ->
+            options.stylize "undefined" "undefined"
+            |> Format.sprintf "reader at %s time" 
+        | Some (_, Some (f, t)) ->
+            let f = inspectWithOptions f options in
+            let t = inspectWithOptions t options in
+            Format.sprintf "reader from %s to %s" f t
+        | _ -> options.stylize "spliced out" "undefined"
+      in
+      inspectElement ~options el (Format.sprintf "\n    %s" reader)
+
+
+let inspect t ~depth ~options =
+  let instance = options.stylize (getUnsafe t "$$instance") "undefined" in
+  let name = getOptUnsafe t "$$name" in
+  let title = match name with
+    | None -> Printf.sprintf "Memotable (%s)" instance
+    | Some name -> Printf.sprintf "%s (%s)" (options.stylize name "special") instance
+  in
+  let childOptions = { stylize = options.stylize; depth = depth - 1 } in
+  let filter k =
+    k != Box.as_uniq "$$instance" && k != Box.as_uniq "$$name"
+  in
+
+  let inspectChild acc k v =
+    let formattedK = options.stylize (Box.uniq_to_string k) "string" in
+    let formattedV = inspectElement v ~options:childOptions "" in
+    Format.sprintf "%s\n  %s => [%s\n  ]" acc formattedK formattedV
+  in
+
+  let values = reduce t ~filter inspectChild "" in
+  title ^ values
+
+  
+let create ?name () =
   let map = createInternal () in
   setOneUnsafe map "$$instance" (Box.getLabel ~label:"pad" ());
-  map
+  (match name with
+    | Some(value) -> setOneUnsafe map "$$name" (Box.as_uniq value)
+    | _ -> ());
+  if pretty_output then setInspector map (inspect map) else map
 
 let set (table: 'a t) key value =
   match !value with

@@ -12,7 +12,8 @@
   "author": "Diao Zheng",
   "license": "MIT",
   "dependencies": {
-    "boost": "file:../boost"
+    "boost": "file:../boost",
+    "util": "^0.12.3"
   },
   "devDependencies": {
     "bs-platform": "*"

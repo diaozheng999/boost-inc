@@ -1,5 +1,11 @@
+open Basis
+open Flags
+
 type 'a modref = 'a Modifiable.t
 type 'a cc = 'a modref -> Modifiable.changeable
+type ('b, 'd) pad = 'b Memo_table.t * 'd Memo_table.t
+
+let debug = Flags.debug_combinators
 
 let write x d = Modifiable.write d x
 
@@ -13,7 +19,7 @@ let create = Modifiable.create
 
 let memoize pad key f =
   let run_memoized f r =
-    let _ = Js.Console.log "run_memoized" in
+    let _ = if debug then Js.log "run_memoized" else () in
     let t1 = !(Modifiable.latest) in
     let v = f () in
     let t2 = !(Modifiable.latest) in
@@ -25,9 +31,9 @@ let memoize pad key f =
           r := Some(v, Some(nt1, t2))
         else
           r := Some(v, None));
-    Js.Console.log "ran";
+    if debug then Js.Console.log "ran" else ();
     Memo_table.set pad key r;
-    Js.Console.log2 "updated memotable, new table" pad;
+    if debug then Js.Console.log2 "updated memotable, new table" pad else ();
     v
   in
 
@@ -40,20 +46,15 @@ let memoize pad key f =
     match !r with
       | None -> run_memoized f r
       | Some(v, t) ->
+        let _ = if debug then Js.log "found" else () in
         match t with
           | None -> v
           | Some(window) -> reuse_result window; v
   in
-  let _ = Js.Console.log2 "pad=" pad in
+  let _ = if debug then Js.Console.log2 "pad=" pad else () in
   memoize' (Memo_table.find pad key (!Modifiable.latest))
 
-let mk_pad () =
-  let p = Memo_table.create () in
-  p
-
-let create_pad () =
-  Js.Console.log "creating pad";
-  (mk_pad (), mk_pad ())
+let create_pad () = (Memo_table.create (), Memo_table.create ())
 
 let lift (p1, p2) eqb key b f =
   let f' () =
@@ -72,7 +73,7 @@ let mkLift2 eqb eqc key b c f =
   mkLift eqb key b staged
 
 let mkLiftCC eqb eqd =
-  let _ = Js.Console.log "mkLiftCC" in
+  let _ = if debug then Js.Console.log "mkLiftCC" else () in
   let pad = create_pad () in
   let lifted arg b f =
     let f' b =
@@ -96,4 +97,4 @@ let mkLiftCC2 eqb eqc eqd =
 
 let (>>=) = read
 
-let log modr = Modifiable.observe modr Js.Console.log
+let log modr = Modifiable.observe modr Js.log

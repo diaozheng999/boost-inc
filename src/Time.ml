@@ -35,25 +35,32 @@ let toString (t: t) = ((__unsafe_inline t.value.at) ^ "|") ^ (__unsafe_inline t.
 
 let describeTime () = Js.log (toArray (!list))
 
+let inspect (t: t) ~depth:_ ~(options: node_js_inspect_options) =
+  let major = Basis.inspectWithOptions t.value.at options in
+  let minor = options.stylize (Format.sprintf "%f" t.value.sub) "undefined" in
+  Format.sprintf "%s|%s" major minor 
+
+let setInspector t = Basis.setInspector t (inspect t)
+
 let add (a: t) =
   match a.next with
     | Some(next) ->
       if a.value.at == next.value.at then
         let sub = (a.value.sub +. next.value.sub) /. 2. in
         let timestamp = { at = a.value.at; sub; isSplicedOut = false } in
-        LinkedListImpl.addAfter (!list) a timestamp
+        LinkedListImpl.addAfter (!list) a timestamp |> setInspector
       else
         let at = ((a.value.at +. next.value.at) /. 2.) in
         let timestamp = { at; sub = 0.; isSplicedOut = false } in
-        LinkedListImpl.addAfter (!list) a timestamp
+        LinkedListImpl.addAfter (!list) a timestamp |> setInspector
     | None ->
       let at = Js.Date.now () in
       if at = a.value.at then
         let timestamp = { at; sub = a.value.sub +. 1.; isSplicedOut = false } in
-        LinkedListImpl.addToEnd (!list) timestamp
+        LinkedListImpl.addToEnd (!list) timestamp |> setInspector
       else
         let timestamp = { at; sub = 0.; isSplicedOut = false } in
-        LinkedListImpl.addToEnd (!list) timestamp
+        LinkedListImpl.addToEnd (!list) timestamp |> setInspector
 
 let init () =
   list := LinkedListImpl.init ()

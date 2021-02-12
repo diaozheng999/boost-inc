@@ -4,7 +4,7 @@ type 'a memotable
 
 type 'a t = 'a memotable
 
-val create: unit -> 'a memotable
+val create: ?name:string -> unit -> 'a memotable
 
 val set: 'a memotable -> Box.index -> 'a entry -> unit
 
