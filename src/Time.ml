@@ -1,14 +1,8 @@
 open Basis
 open Flags
+include Types_internal
 
-type timestamp = {
-  at: float;
-  sub: float;
-  mutable isSplicedOut: bool;
-}
-
-type t = timestamp LinkedListImpl.boost_linked_list_node
-type window = t * t
+type t = time
 
 exception BadNode
 
@@ -36,12 +30,7 @@ let toString (t: t) = ((__unsafe_inline t.value.at) ^ "|") ^ (__unsafe_inline t.
 
 let describeTime () = Js.log (toArray (!list))
 
-let inspect (t: t) ~depth:_ ~(options: node_js_inspect_options) =
-  let major = Basis.inspectWithOptions t.value.at options in
-  let minor = options.stylize (Format.sprintf "%f" t.value.sub) "undefined" in
-  Format.sprintf "%s|%s" major minor 
-
-let setInspector t = Basis.setInspector t (inspect t)
+let setInspector t = Inspect.setInspector t (Inspect.time t)
 
 let add (a: t) =
   match a.next with

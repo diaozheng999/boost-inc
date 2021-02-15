@@ -1,4 +1,3 @@
-open Basis
 open Flags
 
 type time = Time.t
@@ -21,32 +20,32 @@ exception UnsetMod
 
 
 let inspectReader (_, (f, t)) ~depth ~options =
-  if depth < 0 then options.stylize "[reader]" "special" else
-    let f = inspectWithOptions f options in
-    let t = inspectWithOptions t options in
+  if depth < 0 then options##stylize "[reader]" `special else
+    let f = Inspect.withOptions f ~options in
+    let t = Inspect.withOptions t ~options in
     Format.sprintf "reader from %s to %s" f t
 
 let inspectModval v ~depth ~options =
   match v with
-    | Empty -> options.stylize "Empty" "undefined"
+    | Empty -> options##stylize "Empty" `undefined
     | Write(v, l) ->
-      let vstr = inspectWithOptions v options in
-      let lstr = inspectList inspectReader l ~depth ~options in
+      let vstr = Inspect.withOptions v ~options in
+      let lstr = Inspect.list inspectReader l ~depth ~options in
       Format.sprintf "{ value=%s, readers=%s }" vstr lstr
 
 let modref f =
   let r = ref Empty in
   f r |> ignore;
-  if pretty_output then setInspector r (inspectRef inspectModval r) else r
+  if pretty_output then Inspect.setInspector r (Inspect.ref inspectModval r) else r
 
 
 let empty () =
   let r = ref Empty in
-  if pretty_output then setInspector r (inspectRef inspectModval r) else r
+  if pretty_output then Inspect.setInspector r (Inspect.ref inspectModval r) else r
 
 let create v = 
   let r = ref (Write (v, [])) in
-  if pretty_output then setInspector r (inspectRef inspectModval r) else r
+  if pretty_output then Inspect.setInspector r (Inspect.ref inspectModval r) else r
 
 let read modr f =
   match !modr with

@@ -1,6 +1,3 @@
-open Basis
-open Flags
-
 type 'a modref = 'a Modifiable.t
 type 'a cc = 'a modref -> Modifiable.changeable
 type ('b, 'd) pad = 'b Memo_table.t * 'd Memo_table.t
@@ -38,20 +35,24 @@ let memoize pad key f =
           r := Some(v, None));
     if debug then Js.Console.log2 "memoize.run_memoized: updated modref" r;
     Memo_table.set pad key r;
-    if debug then Js.Console.log2 "updated memotable, new table" pad else ();
+    if debug then Js.log2 "memoize.run_memoized: updated memotable, new table" pad;
     v
   in
 
   let reuse_result (t1, t2) =
+    if debug then Js.log3 "memoize.reuse_result: splicing range" t1 t2;
     Time.spliceOut (!Modifiable.latest) t1;
     Modifiable.propagateUntil t2
   in
 
   let memoize' r =
+    if debug then Js.log2 "memoize.memoize': called with" r;
     match !r with
-      | None -> run_memoized f r
+      | None ->
+        let _ = if debug then Js.log "memoize.memoize': not found. Executing f" in
+        run_memoized f r
       | Some(v, t) ->
-        let _ = if debug then Js.log "found" else () in
+        let _ = if debug then Js.log "memoize.memoize': reusing existing value" in
         match t with
           | None -> v
           | Some(window) -> reuse_result window; v

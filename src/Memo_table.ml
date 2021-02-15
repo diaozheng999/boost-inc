@@ -1,4 +1,3 @@
-open Basis
 open Flags
 
 type 'a entry = ('a * Time.window option) option ref
@@ -27,40 +26,30 @@ let reduce m ~filter f init =
   forEach m (fun v k -> if filter k then acc := (f (!acc) k v));
   !acc
 
-let rec inspectElement e ~depth ~options =
-  if depth < 0 then options.stylize "[reader]" "special" else
-    match !e with
-    | Some (_, None) ->
-        options.stylize "undefined" "undefined"
-        |> Format.sprintf "reader at %s time" 
-    | Some (_, Some (f, t)) ->
-        let f = inspectWithOptions f options in
-        let t = inspectWithOptions t options in
-        Format.sprintf "reader from %s to %s" f t
-    | _ -> options.stylize "spliced out" "undefined"
-
-
 let inspect t ~depth ~options =
-  let instance = options.stylize (getUnsafe t "$$instance") "undefined" in
+  let instance = options##stylize (getUnsafe t "$$instance") `undefined in
   let name = getOptUnsafe t "$$name" in
   let title = match name with
     | None -> Printf.sprintf "Memotable (%s)" instance
-    | Some name -> Printf.sprintf "%s (%s)" (options.stylize name "special") instance
+    | Some name -> Printf.sprintf "%s (%s)" (options##stylize name `special) instance
   in
-  let childDepth = depth - 1 in
-  let childOptions = reduceDepth options in
-  let filter k =
-    k != Box.as_uniq "$$instance" && k != Box.as_uniq "$$name"
-  in
+  if depth < 0 then
+    options##stylize title `special
+  else
+    let childDepth = depth - 1 in
+    let childOptions = Inspect.reduceDepth options in
+    let filter k =
+      k != Box.as_uniq "$$instance" && k != Box.as_uniq "$$name"
+    in
 
-  let inspectChild acc k v =
-    let formattedK = options.stylize (Box.uniq_to_string k) "string" in
-    let formattedV = inspectList inspectElement v ~depth:childDepth ~options:childOptions  in
-    Format.sprintf "%s\n  %s => %s" acc formattedK formattedV
-  in
+    let inspectChild acc k v =
+      let formattedK = options##stylize (Box.uniq_to_string k) `string in
+      let formattedV = Inspect.list Inspect.memotableEntry v ~depth:childDepth ~options:childOptions  in
+      Format.sprintf "%s\n  %s => %s" acc formattedK formattedV
+    in
 
-  let values = reduce t ~filter inspectChild "" in
-  title ^ values
+    let values = reduce t ~filter inspectChild "" in
+    Printf.sprintf "%s { %s\n}" title values
 
   
 let create ?name () =
@@ -69,7 +58,7 @@ let create ?name () =
   (match name with
     | Some(value) -> setOneUnsafe map "$$name" (Box.as_uniq value)
     | _ -> ());
-  if pretty_output then setInspector map (inspect map) else map
+  if pretty_output then Inspect.setInspector map (inspect map) else map
 
 let set (table: 'a t) key value =
   match !value with
@@ -80,6 +69,9 @@ let set (table: 'a t) key value =
         | Some existing -> set' table key (value::existing)
 
 let rec find' list time current =
+  let _ = if debug_combinators then
+    let lst = Inspect.custom (Inspect.list Inspect.memotableEntry) list in 
+    Js.log4 "Memo_table.find': found" lst time current in
   match list with
     | [] -> current
     | e::ks ->
@@ -93,6 +85,11 @@ let rec find' list time current =
         |  _ -> find' ks time current
 
 let find table key time =
+  if debug_combinators then
+    Js.log4 "Memo_table.find: retrieving from " key time table;
   match get table key with
-    | None -> ref None
+    | None ->
+      if debug_combinators then
+        Js.log "Memo_table.find: not found.";
+      ref None
     | Some list -> find' list time (ref None)
