@@ -5,6 +5,8 @@ type time = Time.t
 
 val init: unit -> unit
 
+val advanceTime: unit -> unit
+
 val empty: unit -> 'a modref
 val create: 'a -> 'a modref
 val modref: ('a modref -> changeable) -> 'a modref

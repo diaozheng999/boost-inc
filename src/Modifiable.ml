@@ -18,6 +18,7 @@ type 'a t = 'a modref
 
 exception UnsetMod
 
+let advanceTime () = insertTime () |> ignore
 
 let inspectReader (_, (f, t)) ~depth ~options =
   if depth < 0 then options##stylize "[reader]" `special else
@@ -90,6 +91,9 @@ let deref modr =
     | Write (v, _) -> v
 
 let propagateUntil endTime =
+  let _ = if Flags.debug_propagate then
+    Js.log2 "propagateUntil" endTime
+  in
   let rec loop () =
     match Priority_queue.findMin () with
       | None -> ()
@@ -107,10 +111,18 @@ let propagateUntil endTime =
   in loop ()
 
 let propagate () =
+  let _ = if Flags.debug_propagate then
+    Js.log "Modifiable.propagate called"
+  in
   let rec loop () =
     match Priority_queue.findMin () with
       | None -> ()
       | Some(f, (start, stop)) ->
+        let _ = if Flags.debug_propagate then (
+          Js.log4 "Modifiable.propagate.loop: finger" (!finger) "latest" (!latest);
+          Js.log2 "Modifiable.propagate.loop: f" f;
+          Js.log4 "Modifiable.propagate.loop: from" start "to" stop
+        ) in
         let finger' = !finger in
         latest := start;
         finger := stop;
@@ -118,7 +130,12 @@ let propagate () =
         finger := finger';
         Time.spliceOut (!latest) stop;
         loop ()
-  in loop ()
+  in loop ();
+  if Flags.debug_propagate then (
+    Js.log4 "Modifiable.propagate: loop completed. Finger" (!finger) "latest" (!latest);
+    Js.log2 "Modifiable.propagate: current times:" (Time.inspectTime ()) 
+  )
+
 
 let isOutOfFrame start stop =
   not (

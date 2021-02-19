@@ -48,3 +48,5 @@ external segment: (~head:node<'a>, ~tail:node<'a>) => t<'a> = "LinkedList"
 @bs.send external forEachNode: (t<'a>, ~f:(node<'a> => unit)) => unit = "forEachNode"
 
 @bs.send external isCyclic : t<'a> => bool = "isCyclic"
+
+external asArrayLike: t<'a> => Js.Array.array_like<'a> = "%identity"

@@ -56,6 +56,9 @@ let init () =
   list := LinkedListImpl.init ()
 
 let spliceOut (start: t) (stop: t) =
+  let _ = if Flags.debug_propagate then
+    Js.log4 "Time.spliceOut from" start "to" stop
+  in
   let rec deleteRange (next: t) =
     if next == stop then ()
     else
@@ -74,3 +77,5 @@ let spliceOut (start: t) (stop: t) =
 let isSplicedOut ({ value={ isSplicedOut } }: t) = isSplicedOut
 
 let compareWindow (l, _) (r, _) = compare l r
+
+let inspectTime () = Inspect.custom Inspect.linkedList (!list)

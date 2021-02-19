@@ -29,8 +29,25 @@ let ref = (inspectElement, ref) => (~depth, ~options) => {
   `${options["stylize"](."#ref", #undefined)} ${inspectElement(ref.contents, ~depth, ~options)}`
 }
 
+let s = Js.Float.toString
+
 let time = (t: time) => (~depth as _, ~options) => {
-  let major = withOptions(t.value.at, ~options)
-  let minor = options["stylize"](.`${Js.Float.toString(t.value.sub)}`, #undefined)
-  `${major}|${minor}`
+  if t.value.isSplicedOut {
+    options["stylize"](.`t|${s(t.value.at)}|${s(t.value.sub)} (spliced out)`, #undefined)
+  } else if Flags.real_time {
+    let major = withOptions(t.value.at, ~options)
+    let minor = options["stylize"](.`${s(t.value.sub)}`, #undefined)
+    `t|${major}|${minor}`
+  } else {
+    `t|${withOptions(t.value.sub, ~options)}`
+  }
+}
+
+let linkedList = (list) => (~depth, ~options) => {
+  if depth < 0 {
+    options["stylize"](."LinkedList", #special)
+  } else {
+    let p = LinkedListImpl.asArrayLike(list) -> Js.Array.from
+    withOptions(p, ~options)
+  }
 }

@@ -76,7 +76,7 @@ let create_pad ?name () =
 
 let lift (p1, p2) eqb key b f =
   let _ = if debug then Js.log4 "lift: called with key" key "value" b else () in
-  let _ = if debug then Js.log2 "lift: current time" (!Modifiable.latest) in
+  let _ = if debug then Js.log4 "lift: current time" (!Modifiable.latest) "; current finger" (!Modifiable.finger) in
   let f' () =
     let _ = if debug then Js.log "lift.f': called" in
     let r = Modifiable.empty () in

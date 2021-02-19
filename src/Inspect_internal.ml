@@ -1,6 +1,8 @@
-open Flags
+(**
+  NodeJS's stylize options. "module" is excluded.
 
-(* NodeJS's stylize options. "module" is excluded. *)
+  Use `stylizeModule` instead.
+ *)
 type stylize_options = [
   | `bigint
   | `boolean
@@ -27,7 +29,7 @@ type 'a inspected
 
 type inspect_symbol
 
-external custom: inspect_symbol = "custom" [@@bs.module "util"] [@@bs.scope "inspect"]
+external inspect_symbol: inspect_symbol = "custom" [@@bs.module "util"] [@@bs.scope "inspect"]
 
 external inspect: 'a -> string = "inspect" [@@bs.module "util"]
 
@@ -35,14 +37,14 @@ external withOptions: 'a -> options:node_js_inspect_options -> string = "inspect
 
 external defaultOptions: node_js_inspect_options = "defaultOptions" [@@bs.module "util"][@@bs.scope "inspect"]
 
-external magic: string -> stylize_options = "%identity" [%%private]
+external magic: string -> stylize_options = "%identity" [@@private]
 
 let unsafe_setInspectFunction (a: 'a) (f: 'a inspector) (c: inspect_symbol) =
   [%bs.raw "a[c] = f"]
 [@@warning "-27"]
 
 let setInspector a insp =
-  unsafe_setInspectFunction a insp custom |> ignore; a [%%private]
+  unsafe_setInspectFunction a insp inspect_symbol |> ignore; a [%%private]
 
 let stylizeModule ~options value =
   options##stylize value (magic "module")
@@ -68,8 +70,8 @@ let with_ inspector elem ~options =
       let _ = setInspector elem (inspector elem) in
       withOptions elem ~options
     | _ ->
-      let _ = setInspectObject (inspector elem) in
-      withOptions elem ~options
+      let obj = setInspectObject (inspector elem) in
+      withOptions obj ~options
 
 let custom inspector elem =
   let options = withDefault [%obj { colors=true }] in

@@ -12,3 +12,4 @@ val compareWindow: window -> window -> CmpImpl.ord
 
 val describeTime: unit -> unit
 val toString: t -> string
+val inspectTime: unit -> string

@@ -13,6 +13,8 @@ external get: ('k, 'v) js_map -> 'k -> 'v option = "get" [@@bs.send]
 
 external set': ('k, 'v) js_map -> 'k -> 'v -> unit = "set" [@@bs.send]
 
+external delete: ('k, 'v) js_map -> 'k -> unit = "delete" [@@bs.send]
+
 external setOneUnsafe: ('k, 'v) js_map -> string -> Box.unique -> unit = "set" [@@bs.send]
 
 external getUnsafe: ('k, 'v) js_map -> string -> string = "get" [@@bs.send]
@@ -68,28 +70,44 @@ let set (table: 'a t) key value =
         | None -> set' table key [value]
         | Some existing -> set' table key (value::existing)
 
-let rec find' list time current =
+(**
+  Finds the node in the list with the earliest start time, and at the same time
+  removes nodes with spliced out windows accumulated in TCO parameter `next`.
+ *)
+let rec find' list time current next =
+
   let _ = if debug_combinators then
     let lst = Inspect.custom (Inspect.list Inspect.memotableEntry) list in 
-    Js.log4 "Memo_table.find': found" lst time current in
+    Js.log4 "Memo_table.find': current list" lst time current in
   match list with
-    | [] -> current
+    | [] -> current, next
     | e::ks ->
       match !e with
-        | Some(_, Some(t, _)) -> (
+        | Some(_, Some(t, u)) -> (
+            let n =
+              if Time.isSplicedOut t && Time.isSplicedOut u then
+                next
+              else e::next
+            in 
             match Time.compare t time with
-              | CmpImpl.Less -> find' ks t e
-              | _ -> find' ks time current
+              | CmpImpl.Less -> find' ks t e n
+              | _ -> find' ks time current n
           )
-        | Some(_, None) -> e
-        |  _ -> find' ks time current
+        | Some(_, None) -> e, next
+        |  _ -> find' ks time current next
 
 let find table key time =
   if debug_combinators then
-    Js.log4 "Memo_table.find: retrieving from " key time table;
+    Js.log4 "Memo_table.find: retrieving from" key time table;
   match get table key with
     | None ->
       if debug_combinators then
         Js.log "Memo_table.find: not found.";
       ref None
-    | Some list -> find' list time (ref None)
+    | Some list -> 
+      let result, reduced = find' list time (ref None) [] in
+      let _ = match reduced with
+        | [] -> delete table key
+        | _ -> set' table key reduced
+      in
+      result
