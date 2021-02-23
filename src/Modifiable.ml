@@ -160,3 +160,9 @@ let observe modr f =
     match !modr with
       | Empty -> raise UnsetMod
       | Write(v, _) -> f v
+
+let attachObserver modr f = read modr f
+
+let attachObserver1 modr f = read modr (Obj.magic f)
+
+let attachObserver2 modr f = read modr (Obj.magic f)

@@ -87,12 +87,6 @@ let lift (p1, p2) eqb key b f =
 
 let mkLift eqb = lift (create_pad ()) eqb
 
-let mkLift2 eqb eqc key b c f = 
-  let staged bval =
-    mkLift eqc key c (f bval)
-  in
-  mkLift eqb key b staged
-
 let mkLiftCC ?fname eqb eqd =
   let _ = if debug then Js.log2 "mkLiftCC: created lifter for" fname else () in
   let pad = create_pad ?name:fname () in
@@ -104,18 +98,6 @@ let mkLiftCC ?fname eqb eqd =
       let r = modref (f b) in
       read r (write' eqd)
     in lift pad eqb arg b f'
-  in
-  lifted
-
-let mkLiftCC2 eqb eqc eqd =
-  let lifted arg b c f =
-    let f' b c =
-      let r = modref (f b c) in
-      read r (write' eqd)
-    in
-    let staged b =
-      lift (create_pad ()) eqc arg c (f' b)
-    in lift (create_pad ()) eqb arg b staged
   in
   lifted
 
