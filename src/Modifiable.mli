@@ -12,10 +12,10 @@ val create: 'a -> 'a modref
 val modref: ('a modref -> changeable) -> 'a modref
 val read: 'a modref -> ('a -> changeable) -> changeable
 val write: 'a Box.t modref -> 'a Box.t -> changeable
-val write': 'a CmpImpl.eq -> 'a modref -> 'a -> changeable
+val write': 'a Boost.Traits.eq -> 'a modref -> 'a -> changeable
 
 val change: 'a Box.t modref -> 'a Box.t -> unit
-val change': 'a CmpImpl.eq -> 'a modref -> 'a -> unit
+val change': 'a Boost.Traits.eq -> 'a modref -> 'a -> unit
 val change'': 'a modref -> 'a -> unit
 
 val deref: 'a modref -> 'a

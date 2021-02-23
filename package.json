@@ -16,6 +16,6 @@
     "util": "^0.12.3"
   },
   "devDependencies": {
-    "bs-platform": "*"
+    "bs-platform": "^9.0.1"
   }
 }

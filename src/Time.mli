@@ -7,8 +7,8 @@ val add: t -> t
 val getNext: t -> t option
 val spliceOut: t -> t -> unit
 val isSplicedOut: t -> bool 
-val compare: t -> t -> CmpImpl.ord
-val compareWindow: window -> window -> CmpImpl.ord
+val compare: t -> t -> Boost.Traits.ord
+val compareWindow: window -> window -> Boost.Traits.ord
 
 val describeTime: unit -> unit
 val toString: t -> string

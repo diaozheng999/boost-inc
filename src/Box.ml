@@ -1,34 +1,24 @@
 open Basis
 open Flags
-
-type unique_gen
-type unique
+open Boost.Unique
 
 type index = unique
-type 'a box = { label: unique; value: 'a }
+type 'a box = { label: index; value: 'a }
 
 type 'a t = 'a box
 
-external ugen_with_label: string -> unique_gen = "Unique" [@@bs.new] [@@bs.module "boost/dist/esm/ds/index.js"]
-
-external uniq: unique_gen -> unique = "value" [@@bs.get]
-
-external as_uniq: string -> unique = "%identity"
-
-external uniq_to_string: unique -> string = "%identity"
-
 let getLabel ?(label="loc") () =
-   let gen = (ugen_with_label label) in
-   uniq gen
+   let gen = (makeWithLabel ~label) in
+   value gen
 
 
 let init () = ()
 
-let prim k n = as_uniq (k ^ string_of_int n)
+let prim k n = fromString (k ^ string_of_int n)
 
 let inspect box ~depth:_ ~options =
   let child = Inspect.withOptions box.value ~options in
-  let label = options##stylize (uniq_to_string box.label) `string in
+  let label = options##stylize (toString box.label) `string in
   Format.sprintf "[Box %s: %s ]" label child
 
 let create ?label v =

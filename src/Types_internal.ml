@@ -4,12 +4,12 @@ type timestamp = {
   mutable isSplicedOut: bool;
 }
 
-type time = timestamp LinkedListImpl.boost_linked_list_node
+type time = timestamp Boost.LinkedList.linked_list_node
 
 type window = time * time
 
 type 'a entry = ('a * window option) option ref
 
-type unique
+type unique = Boost.Unique.t
 
 type 'a box = { label: unique; value: 'a }

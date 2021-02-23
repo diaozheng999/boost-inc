@@ -1,4 +1,4 @@
-open CmpImpl
+open Boost.Traits
 
 type 'a modref = 'a Modifiable.t
 type 'a cc

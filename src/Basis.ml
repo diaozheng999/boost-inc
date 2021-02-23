@@ -1,4 +1,4 @@
-include CmpImpl
+include Boost.Traits
 
 let rec eq al bl =
     match (al, bl) with

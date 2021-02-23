@@ -1,12 +1,13 @@
 open Basis
 open Flags
+open Boost
 include Types_internal
 
 type t = time
 
 exception BadNode
 
-let list = ref (LinkedListImpl.init ())
+let list = ref (LinkedList.make ())
   
 let now () = { at = if real_time then Js.Date.now () else 0.; sub = 0.; isSplicedOut = false }
 
@@ -14,12 +15,12 @@ let getNext ({ next }: t) = next
 
 let create () =
   let timestamp = now () in
-  LinkedListImpl.addToEnd (!list) timestamp
+  LinkedList.addToEnd (!list) timestamp
 
-let compare (a: t) (b: t) =
+let compare = fun [@bs] (a: t) (b: t) ->
   if a == b then Equal else
-  match ordFromJs (num a.value.at b.value.at) with
-    | Equal -> ordFromJs (num a.value.sub b.value.sub)
+  match Traits.ordFromJs (Compare.num [@bs] a.value.at b.value.at) with
+    | Equal -> Traits.ordFromJs (Compare.num [@bs] a.value.sub b.value.sub)
     | cmp -> cmp
 
 external __unsafe_inline : float -> string = "%identity"
