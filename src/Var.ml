@@ -34,11 +34,25 @@ let createVar ?(eq=Box.eq) create v =
 
 let create ?(label="var") = createVar (Box.create ~label)
 
+let empty ?(label="loc") () =
+  let modref = Modifiable.empty () in
+  createVarFromModref ~eq:Box.eq (Box.create ~label) modref
+
 let int = createVar Box.fromInt
 
 let opt o = createVar Box.fromOption o
 
 let str s = createVar Box.fromString s
+
+let createAssumingSameType ?(label="infer") v =
+  match Js.Types.classify v with
+    | Js.Types.JSString s -> str s |> Obj.magic
+    | Js.Types.JSNull
+    | Js.Types.JSNumber _
+    | Js.Types.JSSymbol _
+    | Js.Types.JSTrue
+    | Js.Types.JSFalse -> createVar (Box.fromPrim "%prim") v
+    | _ -> create ~label v
 
 let ofCombinator (r: 'a cc) =
   let inst = modref r in
