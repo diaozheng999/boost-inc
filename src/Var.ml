@@ -5,7 +5,7 @@ type 'a var = {
   modref: 'a Box.t modref;
   change: 'a -> unit;
   create: 'a -> 'a Box.t;
-  eq: 'a Box.t eq;
+  eq: 'a Box.t equality;
   changeEagerly: 'a -> unit;
 }
 

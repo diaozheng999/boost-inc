@@ -17,14 +17,6 @@ let lift4 a b c d ~f =
   let staged aval = lift3 b c d ~f:(f aval) () in
   lift a ~f:staged
 
-let mkMap (a: 'a Var.t) ~f =
-  let f aref =
-    aref >>= fun av ->
-      let a = Box.valueOf av in
-      write (Box.create (f a))
-    in
-  lift ~f a ()
-
 let mkMap (a: 'a Var.t) f =
   let f aref =
     aref >>= fun av ->

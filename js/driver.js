@@ -6,5 +6,19 @@ const P = require("../lib/js/src/Promise.bs");
 let a = Var.$$int(4);
 
 let p = P.make(new Promise((res) => {
-  setTimeout(() => res(2), 200);
+  setTimeout(() => {
+    console.log('update');
+    res(2);
+  }, 200);
 }));
+
+let wait = (ms) => new Promise((res) => setTimeout(res, ms))
+
+async function loop() {
+  while (true) {
+    await wait(2000);
+    console.log("sync...");
+  }
+}
+
+loop();

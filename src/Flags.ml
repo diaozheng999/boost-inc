@@ -1,6 +1,6 @@
 let debug_combinators = false [@@private]
 
-let debug_propagate = false [@@private]
+let debug_propagate = true [@@private]
 
 let debug_memotable = false [@@private]
 

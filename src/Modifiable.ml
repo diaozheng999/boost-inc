@@ -99,7 +99,7 @@ let propagateUntil endTime =
       | None -> ()
       | Some(f, (start, stop)) ->
         if Time.isSplicedOut start then loop ()
-        else if Time.compare endTime stop = CmpImpl.Less then ()
+        else if Time.compare endTime stop = Less then ()
         else
           let finger' = !finger in
           latest := start;
@@ -139,8 +139,8 @@ let propagate () =
 
 let isOutOfFrame start stop =
   not (
-    Time.compare (!latest) start = CmpImpl.Less &&
-    Time.compare stop (!finger) = CmpImpl.Less
+    Time.compare (!latest) start = Less &&
+    Time.compare stop (!finger) = Less
   )
 
 let init () =

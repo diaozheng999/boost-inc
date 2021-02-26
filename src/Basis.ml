@@ -1,5 +1,7 @@
 include Boost.Traits
 
+type 'a equality = 'a -> 'a -> bool
+
 let rec eq al bl =
     match (al, bl) with
       | ([], []) -> true
@@ -10,4 +12,4 @@ let rec eq al bl =
 
 external toString: 'a -> string = "toString" [@@bs.send]
 
-external hash: 'a -> int = "hash" [@@bs.module "boost/dist/esm/common/index.js"]
+let hash = Boost.Hash.hash

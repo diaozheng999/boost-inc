@@ -1,3 +1,5 @@
+open Basis
+
 type 'a modref = 'a Modifiable.t
 type 'a cc = 'a modref -> Modifiable.changeable
 type ('b, 'd) pad = 'b Memo_table.t * 'd Memo_table.t
@@ -29,7 +31,7 @@ let memoize pad key f =
     (match nt1o with
       | None -> r := Some(v, None)
       | Some(nt1) ->
-        if Time.compare nt1 t2 = CmpImpl.Less then
+        if Time.compare nt1 t2 = Less then
           r := Some(v, Some(nt1, t2))
         else
           r := Some(v, None));

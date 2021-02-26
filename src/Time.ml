@@ -17,15 +17,17 @@ let create () =
   let timestamp = now () in
   LinkedList.addToEnd (!list) timestamp
 
-let compare = fun [@bs] (a: t) (b: t) ->
+
+
+let compare = fun (a: t) (b: t) ->
   if a == b then Equal else
-  match Traits.ordFromJs (Compare.num [@bs] a.value.at b.value.at) with
-    | Equal -> Traits.ordFromJs (Compare.num [@bs] a.value.sub b.value.sub)
+  match Compare.exec Compare.num a.value.at b.value.at with
+    | Equal -> Compare.exec Compare.num a.value.sub b.value.sub
     | cmp -> cmp
 
 external __unsafe_inline : float -> string = "%identity"
 
-external toArray: 'a LinkedListImpl.t -> 'a array = "from" [@@bs.val][@@bs.scope "Array"]
+external toArray: 'a LinkedList.t -> 'a array = "from" [@@bs.val][@@bs.scope "Array"]
 
 let toString (t: t) = ((__unsafe_inline t.value.at) ^ "|") ^ (__unsafe_inline t.value.sub)
 
@@ -39,22 +41,22 @@ let add (a: t) =
       if a.value.at == next.value.at then
         let sub = (a.value.sub +. next.value.sub) /. 2. in
         let timestamp = { at = a.value.at; sub; isSplicedOut = false } in
-        LinkedListImpl.addAfter (!list) a timestamp |> setInspector
+        LinkedList.addAfter (!list) a timestamp |> setInspector
       else
         let at = ((a.value.at +. next.value.at) /. 2.) in
         let timestamp = { at; sub = 0.; isSplicedOut = false } in
-        LinkedListImpl.addAfter (!list) a timestamp |> setInspector
+        LinkedList.addAfter (!list) a timestamp |> setInspector
     | None ->
       let at = if real_time then Js.Date.now () else 0. in
       if at = a.value.at then
         let timestamp = { at; sub = a.value.sub +. 1.; isSplicedOut = false } in
-        LinkedListImpl.addToEnd (!list) timestamp |> setInspector
+        LinkedList.addToEnd (!list) timestamp |> setInspector
       else
         let timestamp = { at; sub = 0.; isSplicedOut = false } in
-        LinkedListImpl.addToEnd (!list) timestamp |> setInspector
+        LinkedList.addToEnd (!list) timestamp |> setInspector
 
 let init () =
-  list := LinkedListImpl.init ()
+  list := LinkedList.make ()
 
 let spliceOut (start: t) (stop: t) =
   let _ = if Flags.debug_propagate then
@@ -64,7 +66,7 @@ let spliceOut (start: t) (stop: t) =
     if next == stop then ()
     else
       let nextnext = next.next in
-      LinkedListImpl.removeNode (!list) next;
+      LinkedList.removeNode (!list) next;
       next.value.isSplicedOut <- true;
       match nextnext with
         | Some(n) -> 

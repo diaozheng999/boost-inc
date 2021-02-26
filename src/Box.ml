@@ -2,6 +2,7 @@ open Basis
 open Flags
 open Boost.Unique
 
+type unique = Boost.Unique.t
 type index = unique
 type 'a box = { label: index; value: 'a }
 
@@ -15,6 +16,9 @@ let getLabel ?(label="loc") () =
 let init () = ()
 
 let prim k n = fromString (k ^ string_of_int n)
+
+let as_uniq = Boost.Unique.fromString
+let uniq_to_string = Boost.Unique.toString
 
 let inspect box ~depth:_ ~options =
   let child = Inspect.withOptions box.value ~options in
@@ -36,11 +40,11 @@ let fromInt i =
   let box = { label; value = i } in
   if pretty_output then Inspect.setInspector box (inspect box) else box
 
-let fromOption ob =
+let fromOption ob : 'a option box=
   match ob with
-    | None -> fromPrim "%o" ob
-    | Some( { label }) ->
-      let box = { label; value = ob } in
+    | None -> fromPrim "%o" None
+    | Some value ->
+      let box = create (Some value) in
       if pretty_output then Inspect.setInspector box (inspect box) else box
 
 let eq {label = ka} {label = kb} = ka == kb

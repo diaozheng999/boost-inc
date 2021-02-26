@@ -90,7 +90,7 @@ let rec find' list time current next =
               else e::next
             in 
             match Time.compare t time with
-              | CmpImpl.Less -> find' ks t e n
+              | Less -> find' ks t e n
               | _ -> find' ks time current n
           )
         | Some(_, None) -> e, next
