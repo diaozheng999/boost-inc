@@ -18,14 +18,14 @@ let inspect v ~depth ~options =
     match v with
       | { loc; isActive = false } ->
           let s = Format.sprintf
-            "{Observer %s [inactive]}"
+            "{ Observer %s [inactive] }"
             (Unique.toString loc)
           in options##stylize s `undefined
       | { window = (t1, t2); loc } ->
           let t1 = Inspect.time t1 ~depth ~options in
           let t2 = Inspect.time t2 ~depth ~options in
-          Format.sprintf "{Observer %s from %s to %s}"
-            (Unique.toString loc)
+          Format.sprintf "{ Observer %s from %s to %s }"
+            (options##stylize (Unique.toString loc) `string)
             t1
             t2
 
