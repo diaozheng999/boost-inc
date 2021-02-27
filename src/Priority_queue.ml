@@ -18,7 +18,7 @@ let isValid (_, sopt) =
     | Some (s, _) -> not (Time.isSplicedOut s)
     | None -> true
 
-let empty () = (CmpImpl.abs compare) |> make
+let empty () = (Boost.Compare.abs compare) |> make
 
 let queue: t ref = ref (empty ()) [@@unbox]
 

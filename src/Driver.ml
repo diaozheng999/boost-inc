@@ -1,4 +1,3 @@
-open Combinators
 open Inc
 
 let a = Var.int 1

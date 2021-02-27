@@ -1,5 +1,3 @@
-type 'a modref = 'a Modifiable.t
-
 let change = Modifiable.change
 
 let change' = Modifiable.change'

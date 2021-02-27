@@ -22,12 +22,6 @@ exception UnsetMod
 
 let advanceTime () = insertTime () |> ignore
 
-let inspectReader (_, (f, t)) ~depth ~options =
-  if depth < 0 then options##stylize "[reader]" `special else
-    let f = Inspect.withOptions f ~options in
-    let t = Inspect.withOptions t ~options in
-    Format.sprintf "reader from %s to %s" f t
-
 let inspectModval v ~depth ~options =
   match v with
     | Empty -> options##stylize "Empty" `undefined

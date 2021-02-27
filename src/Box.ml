@@ -1,10 +1,11 @@
 open Basis
 open Flags
 open Boost.Unique
+open Types_internal
 
 type unique = Boost.Unique.t
 type index = unique
-type 'a box = { label: index; value: 'a }
+type 'a box = 'a Types_internal.box
 
 type 'a t = 'a box
 
@@ -47,7 +48,7 @@ let fromOption ob : 'a option box=
       let box = create (Some value) in
       if pretty_output then Inspect.setInspector box (inspect box) else box
 
-let eq {label = ka} {label = kb} = ka == kb
+let eq ({label = ka} as ba) ({label = kb} as bb) = ba == bb || ka == kb
 
 let valueOf { value } = value
 
