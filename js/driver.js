@@ -22,22 +22,24 @@ let wait = (ms) => new Promise((res) => setTimeout(res, ms))
 
 async function setP() {
   await wait(6000);
+  console.log("updating value to 3");
   p.changeEagerly(3);
-  /*
   await wait(2000);
   console.log("unsubbing", obs);
   Observer.unsub(obs);
   await wait (2000);
   p.changeEagerly(4);
-  */
+  await wait (2000);
+  p.changeEagerly(5);
 }
 
 async function loop() {
   setP();
+  /*
   while (true) {
     await wait(2000);
     console.log("sync...");
-  }
+  }*/
 }
 
 loop();

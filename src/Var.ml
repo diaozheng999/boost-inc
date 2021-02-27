@@ -7,6 +7,10 @@ type 'a var = {
   create: 'a -> 'a Box.t;
   eq: 'a Box.t equality;
   changeEagerly: 'a -> unit;
+  subscribe: ('a -> unit) -> unit -> unit;
+  subscribeBox: ('a Box.t -> unit) -> unit -> unit;
+  subscribe1: (('a -> unit [@bs]) -> (unit -> unit [@bs]) [@bs]);
+  subscribeBox1: (('a Box.t -> unit [@bs]) -> (unit -> unit [@bs]) [@bs]);
 }
 
 type 'a t = 'a var
@@ -19,13 +23,37 @@ let changeEagerly v a =
   change v a;
   Modifiable.propagate ()
 
-let createVarFromModref ?(eq=Box.eq) create modref =
+let subscribeBox ?label modref f =
+  let observer = Modifiable.attachObserver modref ?label f in
+  fun () -> Observer.unsub observer
+
+let subscribeBox1 ?label modref =
+  fun [@bs] f ->
+    let observer = Modifiable.attachObserver1 modref ?label f in
+    fun [@bs] () -> Observer.unsub observer
+
+let subscribe ?label modref f =
+  subscribeBox ?label modref (fun v -> f (Box.valueOf v))
+
+let subscribe1 ?label modref =
+  let staged = subscribeBox1 ?label modref in
+  fun [@bs] f -> staged (fun [@bs] v -> f (Box.valueOf v) [@bs]) [@bs]
+
+let createVarFromModref ?(eq=Box.eq) ?label create modref =
+  let subscribeBox = subscribeBox ?label modref in
+  let subscribeBox1 = subscribeBox1 ?label modref in
+  let subscribe = subscribe ?label modref in
+  let subscribe1 = subscribe1 ?label modref in
   let rec v = {
     modref;
     change = (fun a -> change v a);
     changeEagerly = (fun a -> changeEagerly v a);
     create;
     eq;
+    subscribe;
+    subscribe1;
+    subscribeBox;
+    subscribeBox1;
   } in v
 
 let createVar ?(eq=Box.eq) create v =

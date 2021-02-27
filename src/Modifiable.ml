@@ -50,44 +50,43 @@ let create v =
   let r = ref (Write (v, [])) in
   if pretty_output then Inspect.setInspector r (Inspect.ref inspectModval r) else r
 
-let read' ?label modr f =
+let read modr f =
   match !modr with
     | Empty -> raise UnsetMod
-    | Write(v, _) ->
+    | Write (v, _) ->
       let t1 = insertTime () in
       let _ = f v in
       let t2 = insertTime () in
       match !modr with
         | Write (v, rs) -> (
-          let reader = Observer.make ?label f (t1, t2) in
+          let reader = Observer.makeInc f (t1, t2) in
           let rs' = reader::rs in
-          modr := Write(v, rs');
-          reader
+          modr := Write (v, rs')
         )
         | _ -> raise UnsetMod
 
-let read modr f =
-  read' modr f |> ignore
 
 let readAtTime modr r =
   let _ = if Flags.debug_propagate then
-    Js.log2 "Modifiable.readAtTime: reading " r in 
+    Js.log2 "Modifiable.readAtTime: reading" r in 
   match !modr with
     | Empty -> raise UnsetMod
     | Write(v, rs) ->
       match r with
-        | { isActive = false } ->
+        | Observe { isActive = false } ->
             modr := Write(v, rs)
-        | { read } -> (modr := Write(v, r::rs); read v)
+        | Observe { read }
+        | Inc { read } -> (modr := Write(v, r::rs); read v)
 
 let addReadersToQ rs modr =
   let addReader r =
     match r with
-      | { window = (t1, _) } when Time.isSplicedOut t1 -> ()
-      | { isActive = false } -> ()
-      | { window } ->
-        Priority_queue.insert ((fun () ->
-          readAtTime modr r), window)
+      | Inc { window = (t1, _) } when Time.isSplicedOut t1 -> ()
+      | Observe { isActive = false } -> ()
+      | Inc { window } ->
+          Priority_queue.insert ((fun () -> readAtTime modr r), Some window)
+      | Observe _ ->
+          Priority_queue.insert ((fun () -> readAtTime modr r), None)
   in
   Belt.List.forEach rs addReader
 
@@ -97,6 +96,11 @@ let write' comp modr v =
     | Write (v', rs) ->
       if comp v v' then ()
       else
+        let _ = if Flags.debug_propagate then 
+          Js.log2
+            "Modifiable.write': contains"
+            (Inspect.custom (Inspect.list Observer.inspect) rs)
+        in
         (modr := Write (v, []);
         addReadersToQ rs modr)
 
@@ -114,7 +118,8 @@ let propagateUntil endTime =
   let rec loop () =
     match Priority_queue.findMin () with
       | None -> ()
-      | Some (f, (start, stop)) ->
+      | Some (f, None) -> f (); loop ()
+      | Some (f, Some (start, stop)) ->
         if Time.isSplicedOut start then loop ()
         else if Time.compare endTime stop = Less then ()
         else
@@ -134,7 +139,12 @@ let propagate () =
   let rec loop () =
     match Priority_queue.findMin () with
       | None -> ()
-      | Some (f, (start, stop)) ->
+      | Some (f, None) ->
+        let _ = if Flags.debug_propagate then (
+          Js.log2 "Modifiable.propagate.loop: executing static observer" f
+        ) in
+        f (); loop ()
+      | Some (f, Some (start, stop)) ->
         let _ = if Flags.debug_propagate then (
           Js.log4 "Modifiable.propagate.loop: finger" (!finger) "latest" (!latest);
           Js.log2 "Modifiable.propagate.loop: f" f;
@@ -178,6 +188,12 @@ let observe modr f =
       | Empty -> raise UnsetMod
       | Write(v, _) -> f v
 
-let attachObserver modr ?label f = read' ?label modr f
+let attachObserver modr ?label f =
+  match !modr with
+    | Empty -> raise UnsetMod
+    | Write (v, rs) ->
+      let r = Observer.make ?label f in
+      modr := Write (v, r::rs);
+      r
 
-let attachObserver1 modr ?label f = read' ?label modr (Obj.magic f)
+let attachObserver1 modr ?label f = attachObserver modr ?label (Obj.magic f)

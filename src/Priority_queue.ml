@@ -1,11 +1,22 @@
 open Boost.Heap
+open Boost.Traits
 
-type elt = (unit -> unit) * Time.window
+type elt = (unit -> unit) * Time.window option
 type t = (elt, elt) heap
 
-let compare (_, sa) (_, sb) = Time.compareWindow sa sb
+let compareOpt cmpSome a b =
+  match a, b with
+    | Some a, Some b -> cmpSome a b
+    | None, Some _ -> Less
+    | Some _, None -> Greater
+    | None, None -> Equal
 
-let isValid (_, (s, _)) = not (Time.isSplicedOut s)
+let compare (_, sa) (_, sb) = compareOpt Time.compareWindow sa sb
+
+let isValid (_, sopt) =
+  match sopt with
+    | Some (s, _) -> not (Time.isSplicedOut s)
+    | None -> true
 
 let empty () = (CmpImpl.abs compare) |> make
 
