@@ -1,38 +1,40 @@
 open Boost
 
-exception UnsubTimedObserver
-
-type 'a observer =
-  | Timed of {
-      read: 'a -> unit;
-      window: Time.window;
-      loc: Unique.t;
-    }
-  | Observe of {
-      read: 'a -> unit;
-      loc: Unique.t;
-      mutable isActive: bool
-    }
+type 'a observer = {
+  read: 'a -> unit;
+  window: Time.window;
+  loc: Unique.t;
+  mutable isActive: bool;
+}
 
 type 'a t = 'a observer
 
-let unsub obs =
-  match obs with
-    | Observe obs -> obs.isActive <- false
-    | _ -> raise UnsubTimedObserver
+let unsub obs = obs.isActive <- false
 
 let defaultGen = Unique.makeWithLabel ~label:"obs"
 
-let make ?label ?window read =
+let inspect v ~depth ~options =
+  if depth < 0 then options##stylize "[reader]" `special else
+    match v with
+      | { loc; isActive = false } ->
+          let s = Format.sprintf
+            "{Observer %s [inactive]}"
+            (Unique.toString loc)
+          in options##stylize s `undefined
+      | { window = (t1, t2); loc } ->
+          let t1 = Inspect.time t1 ~depth ~options in
+          let t2 = Inspect.time t2 ~depth ~options in
+          Format.sprintf "{Observer %s from %s to %s}"
+            (Unique.toString loc)
+            t1
+            t2
+
+let make ?label read window =
   let gen = match label with
     | Some (label) -> Unique.makeWithLabel ~label
     | None -> defaultGen
   in
   let loc = Unique.value gen in
-  match window with
-    | Some window -> Timed { read; window; loc }
-    | _ -> Observe { read; loc; isActive = true }
-
-let makeInc read window =
-  let loc = Unique.value defaultGen in
-  Timed { read; window; loc }
+  let obs = { read; window; loc; isActive = true } in
+  if Flags.pretty_output then Inspect.setInspector obs (inspect obs) else obs
+            

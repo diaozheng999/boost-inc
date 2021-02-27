@@ -59,6 +59,11 @@ let withDefault values =
   let copy = Js.Obj.assign [%obj { __boost_InducedByInspector=true }] defaultOptions in
   Js.Obj.assign copy values
 
+let stylizeWith options kind =
+  let copy = Js.Obj.assign [%obj { __boost_ReassignedByInspector=true }] options in
+  let stylize = (fun str _ -> options##stylize str kind) [@bs] in
+  Js.Obj.assign copy [%obj { stylize }]
+
 let setInspectObject insp = setInspector (Js.Obj.empty ()) insp [%%private]
  
 let default a ~depth:_ ~options = withOptions a ~options

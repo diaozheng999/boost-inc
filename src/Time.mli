@@ -1,4 +1,4 @@
-type t
+type t = Types_internal.time
 type window = t * t
 
 val init: unit -> unit

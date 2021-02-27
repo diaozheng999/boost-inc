@@ -31,6 +31,5 @@ val isOutOfFrame: time -> time -> bool
 
 val observe: 'a modref -> ('a -> 'b) -> 'b
 
-val attachObserver: 'a modref -> ('a -> unit) -> unit
-val attachObserver1: 'a modref -> ('a -> unit) Js.Fn.arity1 -> unit
-val attachObserver2: 'a modref -> ('a -> unit) Js_OO.Meth.arity1 -> unit
+val attachObserver: 'a modref -> ?label:string -> ('a -> unit) -> 'a Observer.t
+val attachObserver1: 'a modref -> ?label:string -> ('a -> unit) Js.Fn.arity1 -> 'a Observer.t

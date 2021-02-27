@@ -17,8 +17,6 @@ let create () =
   let timestamp = now () in
   LinkedList.addToEnd (!list) timestamp
 
-
-
 let compare = fun (a: t) (b: t) ->
   if a == b then Equal else
   match Compare.exec Compare.num a.value.at b.value.at with
