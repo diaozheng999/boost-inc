@@ -13,7 +13,6 @@ let getLabel ?(label="loc") () =
    let gen = (makeWithLabel ~label) in
    value gen
 
-
 let init () = ()
 
 let prim k n = fromString (k ^ string_of_int n)
