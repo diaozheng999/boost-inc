@@ -12,4 +12,6 @@ let rec eq al bl =
 
 external toString: 'a -> string = "toString" [@@bs.send]
 
+let ignore' = fun [@bs] _ -> ()
+
 let hash = Boost.Hash.hash

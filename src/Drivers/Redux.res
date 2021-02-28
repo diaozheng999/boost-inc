@@ -1,3 +1,5 @@
+open Basis
+
 type dispatcher<'a> = (.'a) => unit
 
 type store<'a, 's>
@@ -23,11 +25,12 @@ type untagged_unit_action = {
 
 type selector<'s, 'a> = (.Js.t<'s>) => Var.t<'a>
 
-type redux_driver_state<'s> = {
+type redux_driver_state<'a, 's> = {
   mutable readers: array<(Js.t<'s>) => unit>,
   mutable shouldPropagate: bool,
+  mutable currentDispatch: (. 'a) => unit,
+  mutable currentSubscribers: array<(.unit) => unit>
 }
-
 
 module type State = {
   type state
@@ -36,9 +39,34 @@ module type State = {
 
 module Make = (S: State) => {
   
-  let state: redux_driver_state<S.state> = {
+  let state: redux_driver_state<S.action, S.state> = {
     readers: [],
-    shouldPropagate: false
+    shouldPropagate: false,
+    currentDispatch: ignore',
+    currentSubscribers: [],
+  }
+
+  let middleware = (.store) => {
+
+    subscribe(store, {
+      next: (.s) => {
+        Js.Array2.forEach(state.readers, (f) => f(s))
+        if state.shouldPropagate {
+          state.shouldPropagate = false
+          Modifiable.propagate()
+        }
+      }
+    })
+    
+    (.next) => {
+      Js.Array2.forEach(state.currentSubscribers, (f) => f(.))
+      state.currentSubscribers = []
+      state.currentDispatch = next
+
+      (.action) => {
+        next(.action)
+      }
+    }
   }
 
   let readState = (.selector, eqf) => {
@@ -67,23 +95,9 @@ module Make = (S: State) => {
   }
 
   let dispatch = (cc, action) => {
-    
-  }
-
-  let middleware = (.store) => {
-
-    subscribe(store, {
-      next: (.s) => {
-        Js.Array2.forEach(state.readers, (f) => f(s))
-        if state.shouldPropagate {
-          state.shouldPropagate = false
-          Modifiable.propagate()
-        }
-      }
-    })
-    
-    (.next) => (.action) => {
-      next(.action)
-    }
+    let var = Var.ofCombinator(cc)
+    let unsub = var.subscribe1(.(.v) => state.currentDispatch(.action(.v)))
+    Js.Array2.push(state.currentSubscribers, unsub) -> ignore
+    var
   }
 }
