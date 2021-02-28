@@ -1,10 +1,10 @@
 open Boost
 
 type 'a emitter = {
-  loc: Unique.t;
   emit: 'a -> unit;
   var: 'a Var.t;
-  __modref: 'a Types_internal.box Modifiable.t;
+  loc: Unique.t;
+  modref: 'a Types_internal.box Modifiable.t;
 }
 
 let make' ~label =
@@ -16,9 +16,11 @@ let make' ~label =
     loc;
     emit = variable.changeEagerly;
     var = variable;
-    __modref = variable.modref;
+    modref = variable.modref;
   }
 
 let make () = make' ~label:"emitter"
 
 let makeWithLabel label = make' ~label
+
+let modref { modref } = modref

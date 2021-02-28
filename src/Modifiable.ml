@@ -11,7 +11,7 @@ let finger = ref (!latest) [@@unboxed]
 
 let insertTime () =
   let t = Time.add (!latest) in
-  latest := t; t
+  latest := t; t  
 
 type 'a reader = 'a observer
 type 'a modval = Empty | Write of 'a * 'a reader list
@@ -65,24 +65,10 @@ let readAtTime modr r =
     Js.log2 "Modifiable.readAtTime: reading" r in 
   match !modr with
     | Empty -> raise UnsetMod
-    | Write(v, rs) ->
-      match r with
-        | Observe { isActive = false } ->
-            modr := Write(v, rs)
-        | Observe { read }
-        | Inc { read } -> (modr := Write(v, r::rs); read v)
+    | Write(v, rs) -> Observer.exec (fun rs -> modr := Write(v, rs)) r v rs
 
 let addReadersToQ rs modr =
-  let addReader r =
-    match r with
-      | Inc { window = (t1, _) } when Time.isSplicedOut t1 -> ()
-      | Observe { isActive = false } -> ()
-      | Inc { window } ->
-          Priority_queue.insert ((fun () -> readAtTime modr r), Some window)
-      | Observe _ ->
-          Priority_queue.insert ((fun () -> readAtTime modr r), None)
-  in
-  Belt.List.forEach rs addReader
+  Belt.List.forEach rs (Observer.read (readAtTime modr))
 
 let write' comp modr v =
   match !modr with
@@ -104,6 +90,11 @@ let deref modr =
   match !modr with
     | Empty -> raise UnsetMod
     | Write (v, _) -> v
+
+let deref' modr =
+  match !modr with
+    | Empty -> None
+    | Write (v, _) -> Some v
 
 let propagateUntil endTime =
   let _ = if Flags.debug_propagate then

@@ -56,3 +56,18 @@ let makeInc read window =
   let loc = Unique.value defaultGen in
   let obs = Inc { read; window; loc } in
   if Flags.pretty_output then Inspect.setInspector obs (inspect obs) else obs
+
+let read f reader =
+  match reader with
+    | Inc { window = (t1, _) } when Time.isSplicedOut t1 -> ()
+    | Observe { isActive = false } -> ()
+    | Inc { window } ->
+        Priority_queue.insert ((fun () -> f reader), Some window)
+    | Observe _ ->
+        Priority_queue.insert ((fun () -> f reader), None)
+
+let exec f reader v rs =
+  match reader with
+    | Observe { isActive = false } -> f rs
+    | Observe { read }
+    | Inc { read } -> f (reader::rs); read v

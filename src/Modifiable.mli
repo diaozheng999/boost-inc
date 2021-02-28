@@ -21,6 +21,7 @@ val change': 'a equality -> 'a modref -> 'a -> unit
 val change'': 'a modref -> 'a -> unit
 
 val deref: 'a modref -> 'a
+val deref': 'a modref -> 'a option
 val propagate: unit -> unit
 val propagateUntil: time -> unit
 
