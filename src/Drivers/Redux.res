@@ -14,14 +14,6 @@ type middleware<'a, 's> = (.store<'a, 's>) => (.dispatcher<'a>) => dispatcher<'a
 @bs.send external dispatch: (store<'a, 's>, 'a) => unit = "dispatch"
 @bs.send external subscribe: (store<'a, 's>, observer<'s>) => unit = "subscribe"
 
-type untagged_action<'a> = {
-  \"type": [#Boost_internal_action],
-  payload: 'a,
-}
-
-type untagged_unit_action = {
-  \"type": [#Boost_internal_action],
-}
 
 type selector<'s, 'a> = (.Js.t<'s>) => Var.t<'a>
 
@@ -38,12 +30,35 @@ module type State = {
 }
 
 module Make = (S: State) => {
+
+  type action<'a> =
+    | Change({
+        \"type": [#Boost_internal_action],
+        payload: (Var.t<'a>, 'a),
+      })
+    | ChangeEagerly({
+        \"type": [#Boost_internal_action],
+        payload: (Var.t<'a>, 'a),
+      })
   
   let state: redux_driver_state<S.action, S.state> = {
     readers: [],
     shouldPropagate: false,
     currentDispatch: ignore',
     currentSubscribers: [],
+  }
+
+  external asJsAction: S.action =>  { "type": string, "TAG": option<int> } = "%identity"
+  external asInternalAction: { "type": string, "TAG": option<int> } => action<'a> = "%identity"
+
+  let classify = (action) => {
+    let action = asJsAction(action)
+    // exposing BS internals here
+    if action["type"] == "Boost_internal_action" && action["TAG"] != None {
+      Some (asInternalAction(action))
+    } else {
+      None
+    }
   }
 
   let middleware = (.store) => {
@@ -64,7 +79,11 @@ module Make = (S: State) => {
       state.currentDispatch = next
 
       (.action) => {
-        next(.action)
+        switch classify(action) {
+          | None => next(.action) 
+          | Some(Change({ payload: (var, next) })) => var.change(next)
+          | Some(ChangeEagerly({ payload: (var, next) })) => var.changeEagerly(next)
+        }
       }
     }
   }
@@ -100,4 +119,9 @@ module Make = (S: State) => {
     Js.Array2.push(state.currentSubscribers, unsub) -> ignore
     var
   }
+
+  let change = (var, next) => Change({
+    \"type": #Boost_internal_action,
+    payload: (var, next)
+  })
 }
