@@ -1,3 +1,6 @@
+(** Inspect_internal.ml - contains internal operations for `util.inspect` used
+    internally by both `InspectRe.res` and `Inspect.ml` *)
+
 (**
   NodeJS's stylize options. "module" is excluded.
 
@@ -17,18 +20,28 @@ type stylize_options = [
   | `undefined
 ]
 
+(** Inspect options, use `options##stylize` in OCaml and `options["stylize"]`
+    in ReScript *)
 type node_js_inspect_options = <
-  stylize: (string -> stylize_options -> string) Js_OO.Meth.arity2;
+  stylize: (string -> stylize_options -> string) [@bs.meth];
   depth: int;
   colors: bool;
 > Js.t
 
+(* A custom inspector that prints the object to console. Usually used as
+   `'a -> 'a inspector` *)
 type 'a inspector = depth:int -> options:node_js_inspect_options -> string
 
-type 'a inspected
+(******************************************************************************)
+(** This section defines JavaScript FFI interfaces to attach the
+    `util.inspect.custom` symbol to a (potentially JavaScript) object. In this
+    way, we can pretty-print our data structures. This entire module is not
+    used by default if `Flags.pretty_output` is set to `false`. *)
 
+(** An abstract type representing the `util.inspect.custom` symbol *)
 type inspect_symbol
 
+(** The `util.inspect.custom` symbol *)
 external inspect_symbol: inspect_symbol = "custom" [@@bs.module "util"] [@@bs.scope "inspect"]
 
 external inspect: 'a -> string = "inspect" [@@bs.module "util"]
@@ -37,14 +50,21 @@ external withOptions: 'a -> options:node_js_inspect_options -> string = "inspect
 
 external defaultOptions: node_js_inspect_options = "defaultOptions" [@@bs.module "util"][@@bs.scope "inspect"]
 
-external magic: string -> stylize_options = "%identity" [@@private]
+external magic: string -> stylize_options = "%identity"
 
+(** Does the equivalent of the following JavaScript call:
+    ```
+    a[util.inspect.custom] = f
+    ``` *)
 let unsafe_setInspectFunction (a: 'a) (f: 'a inspector) (c: inspect_symbol) =
   [%bs.raw "a[c] = f"]
 [@@warning "-27"]
 
+(** Sets the inspector of an object and returns it *)
 let setInspector a insp =
-  unsafe_setInspectFunction a insp inspect_symbol |> ignore; a [%%private]
+  unsafe_setInspectFunction a insp inspect_symbol |> ignore; a
+
+(******************************************************************************)
 
 let stylizeModule ~options value =
   options##stylize value (magic "module")

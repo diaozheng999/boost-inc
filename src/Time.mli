@@ -1,3 +1,5 @@
+(** Adapted from Self-Adjusting Computation by Umut Acar *)
+
 type t = Types_internal.time
 type window = t * t
 
