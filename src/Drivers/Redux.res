@@ -1,25 +1,19 @@
 open Basis
+open Var
 
 type dispatcher<'a> = (.'a) => unit
 
 type store<'a, 's>
 
-type observer<'a> = {
-  next: (.'a) => unit
-}
-
 type middleware<'a, 's> = (.store<'a, 's>) => (.dispatcher<'a>) => dispatcher<'a>
 
-type timeout
+exception Unattached
 
 @bs.send external getState: (store<'a, 's>) => Js.t<'s> = "getState"
 @bs.send external dispatch: (store<'a, 's>, 'a) => unit = "dispatch"
-@bs.send external subscribe: (store<'a, 's>, observer<'s>) => unit = "subscribe"
+@bs.send external subscribe: (store<'a, 's>, () => unit) => unit = "subscribe"
 
-@bs.val external setTimeout: (unit => unit, int) => timeout = "setTimeout"
-@bs.val external clearTimeout: (timeout) => unit = "clearTimeout"
-
-type selector<'s, 'a> = (.Js.t<'s>) => Var.t<'a>
+type selector<'s, 'a> = (.Js.t<'s>) => 'a
 
 type outcome<'a> =
   | NoOutcome
@@ -37,6 +31,8 @@ type redux_driver_state<'a, 's> = {
   mutable dispatch: dispatcher<'a>,
   mutable subscribers: array<(.unit) => unit>,
   mutable actionInterceptors: array<('a) => unit_outcome>,
+  mutable subscribedToStore: bool,
+  mutable getState: () => Js.t<'s>,
 }
 
 type redux_driver_options<'a> = {
@@ -61,6 +57,7 @@ module Make = (S: State) => {
         payload: (Var.t<'a>, 'a),
       })
     | Sync({ \"type": [#Boost_internal_action] })
+    | Init({ \"type": [#Boost_internal_action] })
   
   let state: redux_driver_state<S.action, S.state> = {
     readers: [],
@@ -68,10 +65,14 @@ module Make = (S: State) => {
     dispatch: ignore',
     subscribers: [],
     actionInterceptors: [],
+    subscribedToStore: false,
+    getState: () => raise(Unattached)
   }
 
   external asJsAction: S.action =>  { "type": string, "TAG": option<int> } = "%identity"
   external asInternalAction: { "type": string, "TAG": option<int> } => action<'a> = "%identity"
+
+  external asAction: action<'a> => S.action = "%identity"
 
   let classify = (action) => {
     let action = asJsAction(action)
@@ -83,29 +84,49 @@ module Make = (S: State) => {
     }
   }
 
-  let middleware = (.store) => (.next) => {
+  let updateState = (s) => {
+    Js.Array2.forEach(state.readers, (f) => f(s))
+  }
 
-    subscribe(store, {
-      next: (.s) => {
-        Js.Array2.forEach(state.readers, (f) => f(s))
-        if state.shouldPropagate {
-          state.shouldPropagate = false
-          Modifiable.propagate()
-        }
-      }
-    })
-    
+  let middleware = (.store) => (.next) => {
     Js.Array2.forEach(state.subscribers, (f) => f(.))
     state.subscribers = []
-    state.dispatch = next
+    state.dispatch = (.a) => dispatch(store, a)
+    state.getState = () => getState(store)
+
+    if Flags.debug_redux {
+      Js.log("Drivers.Redux.middleware: configuration established.")
+    }
 
     (.action) => {
+      if Flags.debug_redux {
+        Js.log2("Driver.Redux.middleware.<lambda>: received action", action)
+      }
+
       switch classify(action) {
-        | Some(Change({ payload: (var, next) })) => var.change(next)
+        | Some(Change({ payload: (var, next) })) => {
+          if !state.subscribedToStore {
+            Js.Console.warn(
+              "Middleware is not subscribed to Store. You need to manually fire " ++
+              "the `sync` action for updates to happen."
+            )
+          }
+          var.change(next)
+        }
         | Some(ChangeEagerly({ payload: (var, next) })) => var.changeEagerly(next)
-        | Some(Sync(_)) => Modifiable.propagate()
+        | Some(Sync(_)) => {
+          if !state.subscribedToStore {
+            getState(store) -> updateState
+          }
+
+          if state.shouldPropagate {
+            state.shouldPropagate = false
+          }
+
+          Modifiable.propagate()
+        }
+        | Some(Init(_))
         | None => {
-          
           let outcome = Belt.Array.reduce(
             state.actionInterceptors,
             N_NoOutcome,
@@ -119,9 +140,15 @@ module Make = (S: State) => {
             }
           )
 
-          if outcome != N_NoOutcome {
+          if !state.subscribedToStore {
+            getState(store) -> updateState
+          }
+
+          if outcome != N_NoOutcome || state.shouldPropagate {
+            state.shouldPropagate = false
             Modifiable.propagate()
           }
+
           if outcome != N_Stop {
             next(.action)
           }
@@ -131,23 +158,33 @@ module Make = (S: State) => {
   }
 
   let mklabel = (options) => {
-    switch options.label {
-      | Some(label) => label
-      | None => "redux"
+    switch options {
+      | Some({ label: Some(label) }) => label
+      | _ => "redux"
     }
   }
 
   let readState = (.selector, ~options) => {
-    let eq = switch options.eq {
-      | Some(eq) => Boost.Eq.abs(eq)
-      | None => Boost.Eq.is
+    let eq = switch options {
+      | Some({ eq: Some(eq) }) => Boost.Eq.abs(eq)
+      | _ => Boost.Eq.is
     }
 
-    let var = Var.empty(~label=mklabel(options), ())
+    state.dispatch(.Init({ \"type": #Boost_internal_action }) -> asAction)
+    let s = state.getState()
+
+    let var = Var.create(~label=mklabel(options), selector(.s))
 
     let change = (v) => {
       var.change(v)
       state.shouldPropagate = true
+    }
+
+    if !state.subscribedToStore {
+      Js.Console.warn(
+        "Middleware is not subscribed to Store. You need to manually fire " ++
+        "the `sync` action for updates to happen."
+      )
     }
 
     Js.Array2.push(state.readers, (state) => {
@@ -162,19 +199,17 @@ module Make = (S: State) => {
     var
   }
 
-  let dispatch = (cc, action) => {
-    let var = Var.ofCombinator(cc)
+  let dispatch = (var, action) => {
     let unsub = var.subscribe1(.(.v) => state.dispatch(.action(.v)))
     Js.Array2.push(state.subscribers, unsub) -> ignore
-    var
   }
 
   let ofAction = (action, ~options) => {
     let var = Var.empty(~label=mklabel(options), ())
     
-    let eq = switch options.eq {
-      | Some(eq) => Boost.Eq.abs(eq)
-      | None => Boost.Eq.is
+    let eq = switch options {
+      | Some({ eq: Some(eq) }) => Boost.Eq.abs(eq)
+      | _ => Boost.Eq.is
     }
 
     let change = (v) => {
@@ -207,5 +242,22 @@ module Make = (S: State) => {
     payload: (var, next)
   })
 
+  let changeEagerly = (var, next) => ChangeEagerly({
+    \"type": #Boost_internal_action,
+    payload: (var, next)
+  })
+
   let sync = () => Sync({ \"type": #Boost_internal_action })
+
+  let subscribeTo = (store) => {
+    subscribe(store, () => {
+      let s = getState(store)
+      Js.Array2.forEach(state.readers, (f) => f(s))
+      if state.shouldPropagate {
+        state.shouldPropagate = false
+        Modifiable.propagate()
+      }
+    })
+    state.subscribedToStore = true
+  }
 }

@@ -1,9 +1,11 @@
-let debug_combinators = false [@@private]
+let debug_combinators = false
 
-let debug_propagate = true [@@private]
+let debug_propagate = true
 
-let debug_memotable = false [@@private]
+let debug_memotable = false
 
-let pretty_output = true [@@private]
+let pretty_output = false
 
-let real_time = true [@@private]
+let real_time = true
+
+let debug_redux = true
