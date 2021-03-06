@@ -2,6 +2,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/rescript-lang/rescript-compiler/master/docs/docson/build-schema.json",
   "name": "boost-inc",
+  "namespace": true,
   "version": "0.0.1",
   "sources": {
     "dir" : "src",
@@ -9,9 +10,9 @@
   },
   "package-specs": {
     "module": "commonjs",
-    "in-source": false
+    "in-source": false,
+    "suffix": ".bs.js"
   },
-  "suffix": ".bs.js",
   "bs-dependencies": [
     "boost"
   ],
