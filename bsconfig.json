@@ -3,7 +3,7 @@
   "$schema": "https://raw.githubusercontent.com/rescript-lang/rescript-compiler/master/docs/docson/build-schema.json",
   "name": "boost-inc",
   "namespace": true,
-  "version": "0.0.1",
+  "version": "0.1.0-unstable.0",
   "sources": {
     "dir" : "src",
     "subdirs" : true

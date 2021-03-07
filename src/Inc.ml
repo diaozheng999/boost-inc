@@ -13,3 +13,5 @@ module Observer = Observer
 module Promise = Promise
 
 include Map
+
+let (>>>) = Var.(>>>)

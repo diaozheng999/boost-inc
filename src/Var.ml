@@ -95,3 +95,5 @@ let log ?l v =
       | None -> Js.Console.log v
   in
   observe ~f v
+
+let (>>>) v recv = v.modref >>= fun value -> Box.valueOf value |> recv
