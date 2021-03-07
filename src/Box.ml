@@ -1,9 +1,9 @@
 open Basis
 open Flags
-open Boost.Unique
+open Yalib.Unique
 open Types_internal
 
-type unique = Boost.Unique.t
+type unique = Yalib.Unique.t
 type index = unique
 type 'a box = 'a Types_internal.box
 
@@ -17,8 +17,8 @@ let init () = ()
 
 let prim k n = fromString (k ^ string_of_int n)
 
-let as_uniq = Boost.Unique.fromString
-let uniq_to_string = Boost.Unique.toString
+let as_uniq = Yalib.Unique.fromString
+let uniq_to_string = Yalib.Unique.toString
 
 let inspect box ~depth:_ ~options =
   let child = Inspect.withOptions box.value ~options in

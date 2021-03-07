@@ -166,8 +166,8 @@ module Make = (S: State) => {
 
   let readState = (.selector, ~options) => {
     let eq = switch options {
-      | Some({ eq: Some(eq) }) => Boost.Eq.abs(eq)
-      | _ => Boost.Eq.is
+      | Some({ eq: Some(eq) }) => Yalib.Eq.abs(eq)
+      | _ => Yalib.Eq.is
     }
 
     state.dispatch(.Init({ \"type": #Boost_internal_action }) -> asAction)
@@ -208,8 +208,8 @@ module Make = (S: State) => {
     let var = Var.empty(~label=mklabel(options), ())
     
     let eq = switch options {
-      | Some({ eq: Some(eq) }) => Boost.Eq.abs(eq)
-      | _ => Boost.Eq.is
+      | Some({ eq: Some(eq) }) => Yalib.Eq.abs(eq)
+      | _ => Yalib.Eq.is
     }
 
     let change = (v) => {

@@ -1,5 +1,5 @@
-open Boost.Heap
-open Boost.Traits
+open Yalib.Heap
+open Yalib.Traits
 
 type elt = (unit -> unit) * Time.window option
 type t = (elt, elt) heap
@@ -18,7 +18,7 @@ let isValid (_, sopt) =
     | Some (s, _) -> not (Time.isSplicedOut s)
     | None -> true
 
-let empty () = (Boost.Compare.abs compare) |> make
+let empty () = (Yalib.Compare.abs compare) |> make
 
 let queue: t ref = ref (empty ()) [@@unbox]
 

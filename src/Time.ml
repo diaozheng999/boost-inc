@@ -1,6 +1,6 @@
 open Basis
 open Flags
-open Boost
+open Yalib
 include Types_internal
 
 type t = time

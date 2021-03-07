@@ -1,5 +1,5 @@
 {
-  "name": "boost-inc",
+  "name": "yalib-inc",
   "version": "0.1.0-unstable.0",
   "scripts": {
     "build": "bsb -make-world",
@@ -12,8 +12,8 @@
   "author": "Diao Zheng",
   "license": "MIT",
   "dependencies": {
-    "boost": "file:../boost",
-    "util": "^0.12.3"
+    "util": "^0.12.3",
+    "yalib": "0.1.0-unstable.0"
   },
   "devDependencies": {
     "bs-platform": "^9.0.1"

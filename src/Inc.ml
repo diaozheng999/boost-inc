@@ -1,6 +1,6 @@
 (* Inc.ml Copyright (c) 2021 Diao Zheng *)
 
-(** Boost-inc is adapted from Self-Adjusting Computation by Umut Acar *)
+(** Yalib-inc is adapted from Self-Adjusting Computation by Umut Acar *)
 
 include Combinators
 include Meta_

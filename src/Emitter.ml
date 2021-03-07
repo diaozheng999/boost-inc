@@ -1,4 +1,4 @@
-open Boost
+open Yalib
 
 type 'a emitter = {
   emit: 'a -> unit;

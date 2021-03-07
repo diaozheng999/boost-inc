@@ -1,7 +1,7 @@
 type 'a emitter = {
   emit: 'a -> unit;
   var: 'a Var.t;
-  loc: Boost.Unique.t;
+  loc: Yalib.Unique.t;
   modref: 'a Box.t Modifiable.t;
 }
 
