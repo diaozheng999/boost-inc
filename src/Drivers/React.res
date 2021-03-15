@@ -5,6 +5,9 @@ external useState: ((.()) => 'a) => ('a, (.'a) => unit) = "useState"
 external useEffect: (.(.()) => (.()) => unit, array<'a>) => unit = "useEffect"
 
 @module("react")
+external useCallback: Js.Fn.arity2<(('a) => 'b, array<'a>, 'a) => 'b> = "useCallback"
+
+@module("react")
 external useMemo: (() => 'a, array<'b>) => 'a = "useMemo"
 
 let useVar = (var: Var.t<'a>) => {
@@ -37,3 +40,13 @@ let useCombinator = (comb: Combinators.cc<'a>) => {
 }
 
 let useCombinatorLazy = (item) => useLazy(useCombinator, item)
+
+let useInc = (comb, ~default) => {
+  let (currentVar, setCurrentVar) = useState((.()) => Var.create(default))
+  let dispatch = useCallback(.
+    (var) => setCurrentVar(.Var.ofCombinator(comb(var))),
+    []
+  )
+  let value = useVar(currentVar)
+  (value, dispatch)
+}
