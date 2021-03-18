@@ -6,7 +6,7 @@
 let debug_combinators = false
 
 (** Set to `true` to enable debug logging of the `propagate` function *)
-let debug_propagate = true
+let debug_propagate = false
 
 (** Set to `true` to enable debug logging of `Memo_table` lookups *)
 let debug_memotable = false
@@ -20,4 +20,4 @@ let pretty_output = false
 let real_time = true
 
 (** Set to `true` to enable debug logging of `Redux` driver *)
-let debug_redux = true
+let debug_redux = false

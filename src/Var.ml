@@ -7,6 +7,7 @@ type 'a var = {
   create: 'a -> 'a Box.t;
   eq: 'a Box.t equality;
   changeEagerly: 'a -> unit;
+  deref: unit -> 'a;
   subscribe: ('a -> unit) -> unit -> unit;
   subscribeBox: ('a Box.t -> unit) -> unit -> unit;
   subscribe1: (('a -> unit [@bs]) -> (unit -> unit [@bs]) [@bs]);
@@ -44,6 +45,7 @@ let createVarFromModref ?(eq=Box.eq) ?label create modref =
   let subscribeBox1 = subscribeBox1 ?label modref in
   let subscribe = subscribe ?label modref in
   let subscribe1 = subscribe1 ?label modref in
+  let deref () = Modifiable.deref modref |> Box.valueOf in
   let rec v = {
     modref;
     change = (fun a -> change v a);
@@ -54,6 +56,7 @@ let createVarFromModref ?(eq=Box.eq) ?label create modref =
     subscribe1;
     subscribeBox;
     subscribeBox1;
+    deref;
   } in v
 
 let createVar ?(eq=Box.eq) create v =

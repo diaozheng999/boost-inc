@@ -40,6 +40,10 @@ let fromInt i =
   let box = { label; value = i } in
   if pretty_output then Inspect.setInspector box (inspect box) else box
 
+let copy box =
+  let { label; value } = box in
+  create ~label:(Yalib.Unique.toString label ^ "_copy") value
+
 let fromOption ob : 'a option box=
   match ob with
     | None -> fromPrim "%o" None
