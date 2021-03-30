@@ -12,6 +12,8 @@ module Box = Box
 module Observer = Observer
 module Promise = Promise
 
+module Let_syntax = Let_syntax
+
 include Map
 
 let (>>>) = Var.(>>>)
