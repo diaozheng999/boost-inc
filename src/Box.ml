@@ -40,6 +40,11 @@ let fromInt i =
   let box = { label; value = i } in
   if pretty_output then Inspect.setInspector box (inspect box) else box
 
+let withCustomHashFunction ~hash value =
+  let label = as_uniq (hash value) in
+  let box = { label; value } in
+  if pretty_output then Inspect.setInspector box (inspect box) else box
+
 let copy box =
   let { label; value } = box in
   create ~label:(Yalib.Unique.toString label ^ "_copy") value

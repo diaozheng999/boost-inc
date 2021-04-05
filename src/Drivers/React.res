@@ -11,10 +11,11 @@ external useCallback: Js.Fn.arity2<(('a) => 'b, array<'a>, 'a) => 'b> = "useCall
 external useMemo: (() => 'a, array<'b>) => 'a = "useMemo"
 
 let useVar = (var: Var.t<'a>) => {
-  let (value, setValue) = useState(
-    (.()) => Modifiable.deref(var.modref) -> Box.valueOf
-  )
-  useEffect(.(.()) => var.subscribe1(.setValue), [var])
+  let (value, setValue) = useState((.()) => var.deref())
+  useEffect(.(.()) => {
+    setValue(.var.deref())
+    var.subscribe1(.setValue)
+  }, [var])
   value
 }
 
@@ -28,6 +29,7 @@ let useVarLazy = (item) => useLazy(useVar, item)
 let useModref = (modref) => {
   let (value, setValue) = useState((.()) => Modifiable.deref(modref))
   useEffect(.(.()) => {
+    setValue(.Modifiable.deref(modref))
     let observer = Modifiable.attachObserver1(modref, setValue)
     (.()) => Observer.unsub(observer)
   }, [modref])

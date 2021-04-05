@@ -6,6 +6,10 @@ module Let_syntax = struct
 
   let map a ~f = Map.map a ~f
 
+  let sub (a: 'a Var.t) ~f = Combinators.(
+    Var.ofCombinator (a.modref >>= fun box -> f box.value)
+  )
+
   let both a b = Map.map2 a b ~f:(fun a b -> a, b)
 
   let bind (a: 'a Var.t) = Combinators.(

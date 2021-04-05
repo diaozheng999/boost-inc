@@ -75,6 +75,9 @@ let opt o = createVar Box.fromOption o
 
 let str s = createVar Box.fromString s
 
+let withCustomHashFunction ~hash v =
+  createVar (Box.withCustomHashFunction ~hash) v
+
 let createAssumingSameType ?(label="infer") v =
   match Js.Types.classify v with
     | Js.Types.JSString s -> str s |> Obj.magic
