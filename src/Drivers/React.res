@@ -14,7 +14,7 @@ let useVar = (var: Var.t<'a>) => {
   let (value, setValue) = useState((.()) => var.deref())
   useEffect(.(.()) => {
     setValue(.var.deref())
-    var.subscribe1(.setValue)
+    var.subscribe_uncurried(.setValue)
   }, [var])
   value
 }
@@ -44,9 +44,9 @@ let useCombinator = (comb: Combinators.cc<'a>) => {
 let useCombinatorLazy = (item) => useLazy(useCombinator, item)
 
 let useInc = (comb, ~default) => {
-  let (currentVar, setCurrentVar) = useState((.()) => Var.create(default))
+  let (currentVar, setCurrentVar) = useState((.()) => Var.make(default))
   let dispatch = useCallback(.
-    (var) => setCurrentVar(.Var.ofCombinator(comb(var))),
+    (var) => setCurrentVar(.Var.of_combinator(comb(var))),
     []
   )
   let value = useVar(currentVar)

@@ -8,9 +8,9 @@ type 'a emitter = {
 }
 
 let make' ~label =
-  let gen = Unique.makeWithLabel ~label in
+  let gen = Unique.make_with_label ~label in
   let loc = Unique.value gen in
-  let label = Format.sprintf "%s_emit" (Unique.toString loc) in
+  let label = Format.sprintf "%s_emit" (Unique.to_str loc) in
   let variable = Var.empty ~label () in
   {
     loc;

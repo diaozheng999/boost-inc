@@ -22,7 +22,7 @@ let unsub obs =
     | Observe obs ->
         obs.isActive <- false
 
-let defaultGen = Unique.makeWithLabel ~label:"obs"
+let defaultGen = Unique.make_with_label ~label:"obs"
 
 let inspect v ~depth ~options =
   if depth < 0 then options##stylize "[reader]" `special else
@@ -30,22 +30,22 @@ let inspect v ~depth ~options =
       | Observe { loc; isActive = false } ->
           let s = Format.sprintf
             "{ Observer %s [inactive] }"
-            (Unique.toString loc)
+            (Unique.to_str loc)
           in options##stylize s `undefined
       | Inc { window = (t1, t2); loc } ->
           let t1 = Inspect.time t1 ~depth ~options in
           let t2 = Inspect.time t2 ~depth ~options in
           Format.sprintf "{ Inc_reader %s from %s to %s }"
-            (options##stylize (Unique.toString loc) `string)
+            (options##stylize (Unique.to_str loc) `string)
             t1
             t2
       | Observe { loc } ->
           Format.sprintf "{ Observer %s }"
-            (options##stylize (Unique.toString loc) `string)
+            (options##stylize (Unique.to_str loc) `string)
 
 let make ?label read =
   let gen = match label with
-    | Some (label) -> Unique.makeWithLabel ~label
+    | Some (label) -> Unique.make_with_label ~label
     | None -> defaultGen
   in
   let loc = Unique.value gen in

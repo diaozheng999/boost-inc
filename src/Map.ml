@@ -1,7 +1,7 @@
 open Combinators
 
 let lift (b: 'b Var.t) ~f =
-  let lift = mkLiftCC Box.eq Box.eq in
+  let lift = mk_lift_cc Box.eq Box.eq in
   let lifted av = lift (Box.indexOf av) av f in
   fun () -> b.modref >>= lifted
 
@@ -49,18 +49,18 @@ let mkMap5 a b c d e fn =
     mkMap4 b c d e (fn a) in
   lift a ~f:(fun aref -> aref >>= mapped1) ()
 
-let map a ~f = Var.ofCombinator (mkMap a f)
+let map a ~f = Var.of_combinator (mkMap a f)
   
-let map2 a b ~f = Var.ofCombinator (mkMap2 a b f)
+let map2 a b ~f = Var.of_combinator (mkMap2 a b f)
 
-let map3 a b c ~f = Var.ofCombinator (mkMap3 a b c f)
+let map3 a b c ~f = Var.of_combinator (mkMap3 a b c f)
 
-let map4 a b c d ~f = Var.ofCombinator (mkMap4 a b c d f)
+let map4 a b c d ~f = Var.of_combinator (mkMap4 a b c d f)
 
-let map5 a b c d e ~f = Var.ofCombinator (mkMap5 a b c d e f)
+let map5 a b c d e ~f = Var.of_combinator (mkMap5 a b c d e f)
 
 let bind (a: 'a Var.t) ~f =
-  let lift = mkLift Box.eq in
+  let lift = mk_lift Box.eq in
   let bound aref =
     let a = Box.valueOf aref in
     lift (Box.indexOf aref) a f

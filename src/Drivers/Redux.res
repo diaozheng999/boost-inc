@@ -173,7 +173,7 @@ module Make = (S: State) => {
     state.dispatch(.Init({ \"type": #Boost_internal_action }) -> asAction)
     let s = state.getState()
 
-    let var = Var.create(~label=mklabel(options), selector(.s))
+    let var = Var.make(~label=mklabel(options), selector(.s))
 
     let change = (v) => {
       var.change(v)

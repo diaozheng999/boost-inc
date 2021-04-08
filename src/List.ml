@@ -25,7 +25,7 @@ let lengthLessThan n l =
   in modref (f n l)
 
 let filter f l =
-  let lift = mkLift eq in
+  let lift = mk_lift eq in
   let rec filterM c =
     match c with
       | Nil -> write Nil
@@ -40,7 +40,7 @@ let combine binOp l =
   let halfList l =
     let pairEqual (b1, c1) (b2, c2) = Box.eq b1 b2 && eq c1 c2 in
     let writePair = write' pairEqual in
-    let lift = mkLiftCC eq eq in
+    let lift = mk_lift_cc eq eq in
 
     let rec half c =
       let rec sumRun v c =

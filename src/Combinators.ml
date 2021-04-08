@@ -87,16 +87,16 @@ let lift (p1, p2) eqb key b f =
       memoize p2 key (fun _ -> f r)
   in memoize p1 key f' b
 
-let mkLift eqb = lift (create_pad ()) eqb
+let mk_lift eqb = lift (create_pad ()) eqb
 
-let mkLiftCC ?fname eqb eqd =
-  let _ = if debug then Js.log2 "mkLiftCC: created lifter for" fname else () in
+let mk_lift_cc ?fname eqb eqd =
+  let _ = if debug then Js.log2 "mk_lift_cc: created lifter for" fname else () in
   let pad = create_pad ?name:fname () in
   let lifted arg b f =
-    let _ = if debug then Js.log3 "mkLiftCC.lifted: called with" arg b else () in
-    let _ = if debug then Js.log2 "mkLiftCC.lifted: current time" (!Modifiable.latest) in
+    let _ = if debug then Js.log3 "mk_lift_cc.lifted: called with" arg b else () in
+    let _ = if debug then Js.log2 "mk_lift_cc.lifted: current time" (!Modifiable.latest) in
     let f' b =
-      let _ = if debug then Js.log3 "mkLiftCC.lifted.f': called with " b arg in
+      let _ = if debug then Js.log3 "mk_lift_cc.lifted.f': called with " b arg in
       let r = modref (f b) in
       read r (write' eqd)
     in lift pad eqb arg b f'
@@ -106,3 +106,7 @@ let mkLiftCC ?fname eqb eqd =
 let (>>=) = read
 
 let log modr = Modifiable.observe modr Js.log
+
+(** deprecated *)
+let mkLift = mk_lift
+let mkLiftCC = mk_lift_cc

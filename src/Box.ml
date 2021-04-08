@@ -4,25 +4,28 @@ open Yalib.Unique
 open Types_internal
 
 type unique = Yalib.Unique.t
+
 type index = unique
+
 type 'a box = 'a Types_internal.box
 
 type 'a t = 'a box
 
-let getLabel ?(label="loc") () =
-   let gen = (makeWithLabel ~label) in
-   value gen
+let getLabel ?(label = "loc") () =
+  let gen = make_with_label ~label in
+  value gen
 
 let init () = ()
 
-let prim k n = fromString (k ^ string_of_int n)
+let prim k n = of_str (k ^ string_of_int n)
 
-let as_uniq = Yalib.Unique.fromString
-let uniq_to_string = Yalib.Unique.toString
+let as_uniq = Yalib.Unique.of_str
+
+let uniq_to_string = Yalib.Unique.to_str
 
 let inspect box ~depth:_ ~options =
   let child = Inspect.withOptions box.value ~options in
-  let label = options##stylize (toString box.label) `string in
+  let label = options##stylize (to_str box.label) `string in
   Format.sprintf "[Box %s: %s ]" label child
 
 let create ?label v =
@@ -30,36 +33,52 @@ let create ?label v =
   let box = { label; value = v } in
   if pretty_output then Inspect.setInspector box (inspect box) else box
 
-let fromPrim k value =
+let of_prim k value =
   let label = prim k (hash value) in
   let box = { label; value } in
   if pretty_output then Inspect.setInspector box (inspect box) else box
 
-let fromInt i =
+let of_int i =
   let label = prim "%i" i in
   let box = { label; value = i } in
   if pretty_output then Inspect.setInspector box (inspect box) else box
 
-let withCustomHashFunction ~hash value =
+let with_custom_hash_function ~hash value =
   let label = as_uniq (hash value) in
   let box = { label; value } in
   if pretty_output then Inspect.setInspector box (inspect box) else box
 
 let copy box =
   let { label; value } = box in
-  create ~label:(Yalib.Unique.toString label ^ "_copy") value
+  create ~label:(Yalib.Unique.to_str label ^ "_copy") value
 
-let fromOption ob : 'a option box=
+let of_opt ob : 'a option box =
   match ob with
-    | None -> fromPrim "%o" None
-    | Some value ->
+  | None -> of_prim "%o" None
+  | Some value ->
       let box = create (Some value) in
       if pretty_output then Inspect.setInspector box (inspect box) else box
 
-let eq ({label = ka} as ba) ({label = kb} as bb) = ba == bb || ka == kb
+let eq ({ label = ka } as ba) ({ label = kb } as bb) = ba == bb || ka == kb
 
-let valueOf { value } = value
+let value { value } = value
 
-let indexOf { label } = label
+let idx { label } = label
 
-let fromString (a: string) = fromPrim "%s" a
+let of_str (a : string) = of_prim "%s" a
+
+(** Deprecated interfaces *)
+
+let fromOption = of_opt [@@deprecated "Renamed to of_opt"]
+
+let valueOf = value [@@deprecated "Renamed to value"]
+
+let indexOf = idx [@@deprecated "Renamed to idx"]
+
+let fromString = of_str [@@deprecated "Renamed to of_str"]
+
+let fromPrim = of_prim [@@deprecated "Renamed to of_prim"]
+
+let fromInt = of_int [@@deprecated "Renamed to of_int"]
+
+let withCustomHashFunction = with_custom_hash_function  [@@deprecated "Renamed to with_custom_hash_function"]

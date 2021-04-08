@@ -2,23 +2,29 @@ open Basis
 open Combinators
 
 type 'a var = {
-  modref: 'a Box.t modref;
-  change: 'a -> unit;
-  create: 'a -> 'a Box.t;
-  eq: 'a Box.t equality;
-  changeEagerly: 'a -> unit;
-  deref: unit -> 'a;
-  subscribe: ('a -> unit) -> unit -> unit;
-  subscribeBox: ('a Box.t -> unit) -> unit -> unit;
-  subscribe1: (('a -> unit [@bs]) -> (unit -> unit [@bs]) [@bs]);
-  subscribeBox1: (('a Box.t -> unit [@bs]) -> (unit -> unit [@bs]) [@bs]);
+  modref : 'a Box.t modref;
+  change : 'a -> unit;
+  create : 'a -> 'a Box.t;
+  eq : 'a Box.t equality;
+  change_eagerly : 'a -> unit;
+  deref : unit -> 'a;
+  subscribe : ('a -> unit) -> unit -> unit;
+  subscribe_box : ('a Box.t -> unit) -> unit -> unit;
+  subscribe_uncurried : ((('a -> unit)[@bs]) -> (unit -> unit[@bs])[@bs]);
+  subscribe_box_uncurried :
+    ((('a Box.t -> unit)[@bs]) -> (unit -> unit[@bs])[@bs]);
+  changeEagerly : 'a -> unit; [@deprecated]
+  subscribeBox : ('a Box.t -> unit) -> unit -> unit; [@deprecated]
+  subscribe1 : ((('a -> unit)[@bs]) -> (unit -> unit[@bs])[@bs]); [@deprecated]
+  subscribeBox1 : ((('a Box.t -> unit)[@bs]) -> (unit -> unit[@bs])[@bs]);
+      [@deprecated]
 }
 
 type 'a t = 'a var
 
-let change ({ modref; create; eq }: 'a var) a =
+let change ({ modref; create; eq } : 'a var) a =
   let next = create a in
-  Modifiable.change' eq modref next 
+  Modifiable.change' eq modref next
 
 let changeEagerly v a =
   change v a;
@@ -29,43 +35,50 @@ let subscribeBox ?label modref f =
   fun () -> Observer.unsub observer
 
 let subscribeBox1 ?label modref =
-  fun [@bs] f ->
-    let observer = Modifiable.attachObserver1 modref ?label f in
-    fun [@bs] () -> Observer.unsub observer
+ fun [@bs] f ->
+  let observer = Modifiable.attachObserver1 modref ?label f in
+  fun [@bs] () -> Observer.unsub observer
 
 let subscribe ?label modref f =
   subscribeBox ?label modref (fun v -> f (Box.valueOf v))
 
 let subscribe1 ?label modref =
   let staged = subscribeBox1 ?label modref in
-  fun [@bs] f -> staged (fun [@bs] v -> f (Box.valueOf v) [@bs]) [@bs]
+  fun [@bs] f -> (staged (fun [@bs] v -> (f (Box.valueOf v) [@bs])) [@bs])
 
-let createVarFromModref ?(eq=Box.eq) ?label create modref =
-  let subscribeBox = subscribeBox ?label modref in
-  let subscribeBox1 = subscribeBox1 ?label modref in
+let createVarFromModref ?(eq = Box.eq) ?label create modref =
+  let subscribe_box = subscribeBox ?label modref in
+  let subscribe_box_uncurried = subscribeBox1 ?label modref in
   let subscribe = subscribe ?label modref in
-  let subscribe1 = subscribe1 ?label modref in
+  let subscribe_uncurried = subscribe1 ?label modref in
   let deref () = Modifiable.deref modref |> Box.valueOf in
-  let rec v = {
-    modref;
-    change = (fun a -> change v a);
-    changeEagerly = (fun a -> changeEagerly v a);
-    create;
-    eq;
-    subscribe;
-    subscribe1;
-    subscribeBox;
-    subscribeBox1;
-    deref;
-  } in v
+  let rec v =
+    {
+      modref;
+      change = (fun a -> change v a);
+      change_eagerly = (fun a -> changeEagerly v a);
+      create;
+      eq;
+      subscribe;
+      subscribe_uncurried;
+      subscribe_box;
+      subscribe_box_uncurried;
+      changeEagerly = (fun a -> changeEagerly v a);
+      subscribe1 = subscribe_uncurried;
+      subscribeBox = subscribe_box;
+      subscribeBox1 = subscribe_box_uncurried;
+      deref;
+    }
+  in
+  v
 
-let createVar ?(eq=Box.eq) create v =
+let createVar ?(eq = Box.eq) create v =
   let modref = Modifiable.create (create v) in
   createVarFromModref ~eq create modref
 
-let create ?(label="var") = createVar (Box.create ~label)
+let create ?(label = "var") = createVar (Box.create ~label)
 
-let empty ?(label="loc") () =
+let empty ?(label = "loc") () =
   let modref = Modifiable.empty () in
   createVarFromModref ~eq:Box.eq (Box.create ~label) modref
 
@@ -78,28 +91,40 @@ let str s = createVar Box.fromString s
 let withCustomHashFunction ~hash v =
   createVar (Box.withCustomHashFunction ~hash) v
 
-let createAssumingSameType ?(label="infer") v =
+let createAssumingSameType ?(label = "infer") v =
   match Js.Types.classify v with
-    | Js.Types.JSString s -> str s |> Obj.magic
-    | Js.Types.JSNull
-    | Js.Types.JSNumber _
-    | Js.Types.JSSymbol _
-    | Js.Types.JSTrue
-    | Js.Types.JSFalse -> createVar (Box.fromPrim "%prim") v
-    | _ -> create ~label v
+  | Js.Types.JSString s -> str s |> Obj.magic
+  | Js.Types.JSNull | Js.Types.JSNumber _ | Js.Types.JSSymbol _
+  | Js.Types.JSTrue | Js.Types.JSFalse ->
+      createVar (Box.fromPrim "%prim") v
+  | _ -> create ~label v
 
-let ofCombinator (r: 'a cc) =
+let ofCombinator (r : 'a cc) =
   let inst = modref r in
   createVarFromModref ~eq:Box.eq (Box.create ~label:"cc") inst
 
-let observe ~f (v: 'a var) = Modifiable.observe v.modref f
+let observe ~f (v : 'a var) = Modifiable.observe v.modref f
 
 let log ?l v =
   let f v =
     match l with
-      | Some label -> Js.Console.log2 label v
-      | None -> Js.Console.log v
+    | Some label -> Js.Console.log2 label v
+    | None -> Js.Console.log v
   in
   observe ~f v
 
-let (>>>) v recv = v.modref >>= fun value -> Box.valueOf value |> recv
+let ( >>> ) v recv = v.modref >>= fun value -> Box.valueOf value |> recv
+
+let of_modref = createVarFromModref
+
+let of_combinator = ofCombinator
+
+let make_with_custom_hash_function = withCustomHashFunction
+
+let make = create
+
+let make_var = createVar
+
+let change_eagerly = changeEagerly
+
+let make_assuming_same_type = createAssumingSameType

@@ -4,7 +4,7 @@ type timestamp = {
   mutable isSplicedOut: bool;
 }
 
-type time = timestamp Yalib.LinkedList.linked_list_node
+type time = timestamp Yalib.Linked_list.linked_list_node
 
 type window = time * time
 
