@@ -13,6 +13,7 @@ type 'a var = {
   subscribe_uncurried: (('a -> unit [@bs]) -> (unit -> unit [@bs]) [@bs]);
   subscribe_box_uncurried: (('a Box.t -> unit [@bs]) -> (unit -> unit [@bs]) [@bs]);
   change_to : ?exec_after:('a -> unit) -> ('a -> 'a) -> unit;
+  change_to_eagerly : ?exec_after:('a -> unit) -> ('a -> 'a) -> unit;
   changeEagerly: 'a -> unit [@deprecated];
   subscribeBox: ('a Box.t -> unit) -> unit -> unit  [@deprecated];
   subscribe1: (('a -> unit [@bs]) -> (unit -> unit [@bs]) [@bs]) [@deprecated];
@@ -24,6 +25,10 @@ type 'a t = 'a var
 val change : 'a var -> 'a -> unit
 
 val change_eagerly : 'a var -> 'a -> unit
+
+val change_to : 'a var -> ?exec_after:('a -> unit) -> ('a -> 'a) -> unit
+
+val change_to_eagerly : 'a var -> ?exec_after:('a -> unit) -> ('a -> 'a) -> unit
 
 val of_modref : ?eq:'a Box.t equality -> ?label:string -> ('a -> 'a Box.t) -> 'a Box.t modref -> 'a var
 

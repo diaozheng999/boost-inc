@@ -14,6 +14,7 @@ type 'a var = {
   subscribe_box_uncurried :
     ((('a Box.t -> unit)[@bs]) -> (unit -> unit[@bs])[@bs]);
   change_to : ?exec_after:('a -> unit) -> ('a -> 'a) -> unit;
+  change_to_eagerly : ?exec_after:('a -> unit) -> ('a -> 'a) -> unit;
   changeEagerly : 'a -> unit; [@deprecated]
   subscribeBox : ('a Box.t -> unit) -> unit -> unit; [@deprecated]
   subscribe1 : ((('a -> unit)[@bs]) -> (unit -> unit[@bs])[@bs]); [@deprecated]
@@ -35,6 +36,10 @@ let change_to ({ modref; create; eq } : 'a var) ?exec_after change =
       let _ = match exec_after with Some exe -> exe next | None -> () in
       write' eq (create next) )
     modref
+
+let change_to_eagerly var ?exec_after change =
+  change_to var ?exec_after change;
+  Modifiable.propagate ()
 
 let changeEagerly v a =
   change v a;
@@ -79,6 +84,8 @@ let createVarFromModref ?(eq = Box.eq) ?label create modref =
       subscribeBox1 = subscribe_box_uncurried;
       deref;
       change_to = (fun ?exec_after f -> change_to v ?exec_after f);
+      change_to_eagerly =
+        (fun ?exec_after f -> change_to_eagerly v ?exec_after f);
     }
   in
   v
