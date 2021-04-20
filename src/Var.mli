@@ -12,6 +12,7 @@ type 'a var = {
   subscribe_box: ('a Box.t -> unit) -> unit -> unit;
   subscribe_uncurried: (('a -> unit [@bs]) -> (unit -> unit [@bs]) [@bs]);
   subscribe_box_uncurried: (('a Box.t -> unit [@bs]) -> (unit -> unit [@bs]) [@bs]);
+  change_to : ?exec_after:('a -> unit) -> ('a -> 'a) -> unit;
   changeEagerly: 'a -> unit [@deprecated];
   subscribeBox: ('a Box.t -> unit) -> unit -> unit  [@deprecated];
   subscribe1: (('a -> unit [@bs]) -> (unit -> unit [@bs]) [@bs]) [@deprecated];
