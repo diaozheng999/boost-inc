@@ -4,12 +4,12 @@ type timestamp = {
   mutable isSplicedOut: bool;
 }
 
-type time = timestamp Yalib.Linked_list.linked_list_node
+type time = timestamp Boost.Linked_list.linked_list_node
 
 type window = time * time
 
 type 'a entry = ('a * window option) option ref
 
-type unique = Yalib.Unique.t
+type unique = Boost.Unique.t
 
 type 'a box = { label: unique; value: 'a }

@@ -1,4 +1,4 @@
-include Yalib.Traits
+include Boost.Traits
 
 type 'a equality = 'a -> 'a -> bool
 
@@ -13,4 +13,4 @@ external toString : 'a -> string = "toString" [@@bs.send]
 
 let ignore' = fun [@bs] _ -> ()
 
-let hash = Yalib.Hash.hash
+let hash = Boost.Hash.hash

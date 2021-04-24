@@ -47,7 +47,7 @@ let linkedList = (list) => (~depth, ~options) => {
   if depth < 0 {
     options["stylize"](."LinkedList", #special)
   } else {
-    let p = Yalib.Linked_list.as_array_like(list) -> Js.Array.from
+    let p = Boost.Linked_list.as_array_like(list) -> Js.Array.from
     withOptions(p, ~options)
   }
 }
