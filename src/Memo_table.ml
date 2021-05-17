@@ -78,7 +78,7 @@ let rec find' list time current next =
 
   let _ = if debug_combinators then
     let lst = Inspect.custom (Inspect.list Inspect.memotableEntry) list in 
-    Js.log4 "Memo_table.find': current list" lst time current in
+    Inspect.log3 "Memo_table.find': current list %s %s %s" lst time current in
   match list with
     | [] -> current, next
     | e::ks ->
@@ -98,7 +98,7 @@ let rec find' list time current next =
 
 let find table key time =
   if debug_combinators then
-    Js.log4 "Memo_table.find: retrieving from" key time table;
+    Inspect.log3 "Memo_table.find: retrieving from %s %s %s" key time table;
   match get table key with
     | None ->
       if debug_combinators then

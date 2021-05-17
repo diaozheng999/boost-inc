@@ -23,7 +23,7 @@ let memoize pad key f =
   let run_memoized f r =
     let _ =
       if debug then
-        Js.log4 "memoize.run_memoized: called with entry" r "pad" pad
+        Inspect.log2 "memoize.run_memoized: called with entry %s pad %s" r pad
       else ()
     in
     let t1 = !Modifiable.latest in
@@ -32,29 +32,29 @@ let memoize pad key f =
     let nt1o = Time.getNext t1 in
     if debug then
       Js.log "memoize.run_memoized: executed f with following results:";
-    if debug then Js.log2 "    t1" t1;
-    if debug then Js.log2 "    t2" t2;
-    if debug then Js.log2 "  nt1o" nt1o;
+    if debug then Inspect.log1 "    t1 %s" t1;
+    if debug then Inspect.log1 "    t2 %s" t2;
+    if debug then Inspect.log1 "  nt1o %s" nt1o;
     (match nt1o with
     | None -> r := Some (v, None)
     | Some nt1 ->
         if Time.compare nt1 t2 = Less then r := Some (v, Some (nt1, t2))
         else r := Some (v, None));
-    if debug then Js.Console.log2 "memoize.run_memoized: updated modref" r;
+    if debug then Inspect.log1 "memoize.run_memoized: updated modref %s" r;
     Memo_table.set pad key r;
     if debug then
-      Js.log2 "memoize.run_memoized: updated memotable, new table" pad;
+      Inspect.log1 "memoize.run_memoized: updated memotable, new table %s" pad;
     v
   in
 
   let reuse_result (t1, t2) =
-    if debug then Js.log3 "memoize.reuse_result: splicing range" t1 t2;
+    if debug then Inspect.log2 "memoize.reuse_result: splicing range %s - %s" t1 t2;
     Time.spliceOut !Modifiable.latest t1;
     Modifiable.propagateUntil t2
   in
 
   let memoize' r =
-    if debug then Js.log2 "memoize.memoize': called with" r;
+    if debug then Inspect.log1 "memoize.memoize': called with %s" r;
     match !r with
     | None ->
         let _ =
@@ -85,11 +85,11 @@ let create_pad ?name () =
   | _ -> (Memo_table.create (), Memo_table.create ())
 
 let lift (p1, p2) eqb key b f =
-  let _ = if debug then Js.log4 "lift: called with key" key "value" b else () in
+  let _ = if debug then Inspect.log2 "lift: called with key %s value %s" key b else () in
   let _ =
     if debug then
-      Js.log4 "lift: current time" !Modifiable.latest "; current finger"
-        !Modifiable.finger
+      Inspect.log2 "lift: current time %s; current finger %s" (!Modifiable.latest) 
+        (!Modifiable.finger)
   in
   let f' () =
     let _ = if debug then Js.log "lift.f': called" in
@@ -104,19 +104,19 @@ let mk_lift eqb = lift (create_pad ()) eqb
 
 let mk_lift_cc ?fname eqb eqd =
   let _ =
-    if debug then Js.log2 "mk_lift_cc: created lifter for" fname else ()
+    if debug then Inspect.log1 "mk_lift_cc: created lifter for %s" fname else ()
   in
   let pad = create_pad ?name:fname () in
   let lifted arg b f =
     let _ =
-      if debug then Js.log3 "mk_lift_cc.lifted: called with" arg b else ()
+      if debug then Inspect.log2 "mk_lift_cc.lifted: called with %s %s" arg b else ()
     in
     let _ =
-      if debug then Js.log2 "mk_lift_cc.lifted: current time" !Modifiable.latest
+      if debug then Inspect.log1 "mk_lift_cc.lifted: current time %s" !Modifiable.latest
     in
     let f' b =
       let _ =
-        if debug then Js.log3 "mk_lift_cc.lifted.f': called with " b arg
+        if debug then Inspect.log2 "mk_lift_cc.lifted.f': called with %s %s" b arg
       in
       let r = modref (f b) in
       read r (write' eqd)

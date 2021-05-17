@@ -62,7 +62,7 @@ let read modr f =
 
 let readAtTime modr r =
   let _ = if Flags.debug_propagate then
-    Js.log2 "Modifiable.readAtTime: reading" r in 
+    Inspect.log1 "Modifiable.readAtTime: reading %s" r in 
   match !modr with
     | Empty -> raise UnsetMod
     | Write(v, rs) -> Observer.exec (fun rs -> modr := Write(v, rs)) r v rs
@@ -77,8 +77,8 @@ let write' comp modr v =
       if comp v v' then ()
       else
         let _ = if Flags.debug_propagate then 
-          Js.log2
-            "Modifiable.write': contains"
+          Inspect.log1
+            "Modifiable.write': contains %s"
             (Inspect.custom (Inspect.list Observer.inspect) rs)
         in
         (modr := Write (v, []);
@@ -98,7 +98,7 @@ let deref' modr =
 
 let propagateUntil endTime =
   let _ = if Flags.debug_propagate then
-    Js.log2 "propagateUntil" endTime
+    Inspect.log1 "propagateUntil %s" endTime
   in
   let rec loop () =
     match Priority_queue.findMin () with
@@ -126,14 +126,14 @@ let propagate () =
       | None -> ()
       | Some (f, None) ->
         let _ = if Flags.debug_propagate then (
-          Js.log2 "Modifiable.propagate.loop: executing static observer" f
+          Inspect.log1 "Modifiable.propagate.loop: executing static observer %s" f
         ) in
         f (); loop ()
       | Some (f, Some (start, stop)) ->
         let _ = if Flags.debug_propagate then (
-          Js.log4 "Modifiable.propagate.loop: finger" (!finger) "latest" (!latest);
-          Js.log2 "Modifiable.propagate.loop: f" f;
-          Js.log4 "Modifiable.propagate.loop: from" start "to" stop
+          Inspect.log2 "Modifiable.propagate.loop: finger %s latest %s" (!finger) (!latest);
+          Inspect.log1 "Modifiable.propagate.loop: f %s" f;
+          Inspect.log2 "Modifiable.propagate.loop: from %s to %s" start stop
         ) in
         let finger' = !finger in
         latest := start;
@@ -144,8 +144,8 @@ let propagate () =
         loop ()
   in loop ();
   if Flags.debug_propagate then (
-    Js.log4 "Modifiable.propagate: loop completed. Finger" (!finger) "latest" (!latest);
-    Js.log2 "Modifiable.propagate: current times:" (Time.inspectTime ()) 
+    Inspect.log2 "Modifiable.propagate: loop completed. Finger %s latest %s" (!finger) (!latest);
+    Inspect.log1 "Modifiable.propagate: current times: %s" (Time.inspectTime ()) 
   )
 
 

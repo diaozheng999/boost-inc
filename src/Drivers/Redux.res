@@ -100,7 +100,7 @@ module Make = (S: State) => {
 
     (.action) => {
       if Flags.debug_redux {
-        Js.log2("Driver.Redux.middleware.<lambda>: received action", action)
+        Inspect.log1("Driver.Redux.middleware.<lambda>: received action %s", action)
       }
 
       switch classify(action) {

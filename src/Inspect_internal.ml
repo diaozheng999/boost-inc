@@ -56,13 +56,18 @@ external magic: string -> stylize_options = "%identity"
     ```
     a[util.inspect.custom] = f
     ``` *)
-let unsafe_setInspectFunction (a: 'a) (f: 'a inspector) (c: inspect_symbol) =
+let unsafe_setInspectFunction (a: 'a) (f: 'a inspector) (c: inspect_symbol) : unit =
   [%bs.raw "a[c] = f"]
 [@@warning "-27"]
 
 (** Sets the inspector of an object and returns it *)
 let setInspector a insp =
-  unsafe_setInspectFunction a insp inspect_symbol |> ignore; a
+  let () =
+    if Flags.inspect_with_polyfill then
+      Js.Dict.set (Obj.magic a) "inspect" insp
+    else
+      unsafe_setInspectFunction a insp inspect_symbol
+  in a
 
 (******************************************************************************)
 

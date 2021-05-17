@@ -21,3 +21,7 @@ let real_time = true
 
 (** Set to `true` to enable debug logging of `Redux` driver *)
 let debug_redux = false
+
+(** Set this to `true` if logging in React Native (or other environments) where
+    `inspect.custom` symbol is not present. *)
+let inspect_with_polyfill = true
