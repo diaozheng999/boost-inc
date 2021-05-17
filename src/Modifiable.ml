@@ -181,4 +181,12 @@ let attachObserver modr ?label f =
       modr := Write (v, r::rs);
       r
 
+let attach_observer_once modr ?label f =
+  match !modr with
+    | Empty -> raise UnsetMod
+    | Write (v, rs) ->
+      let r = Observer.make ?label ~once:true f in
+      modr := Write (v, r::rs);
+      r
+
 let attachObserver1 modr ?label f = attachObserver modr ?label (Obj.magic f)

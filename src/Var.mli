@@ -10,6 +10,7 @@ type 'a var = {
   deref: unit -> 'a;
   subscribe: ('a -> unit) -> unit -> unit;
   subscribe_box: ('a Box.t -> unit) -> unit -> unit;
+  subscribe_once: ('a -> unit) -> unit;
   subscribe_uncurried: (('a -> unit [@bs]) -> (unit -> unit [@bs]) [@bs]);
   subscribe_box_uncurried: (('a Box.t -> unit [@bs]) -> (unit -> unit [@bs]) [@bs]);
   change_to : ?exec_after:('a -> unit) -> ('a -> 'a) -> unit;

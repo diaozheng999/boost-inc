@@ -6,6 +6,7 @@ type 'a observer =
   | Observe of {
       loc: Unique.t;
       read: 'a -> unit;
+      once: bool;
       mutable isActive: bool;
     }
   | Inc of {
@@ -43,13 +44,14 @@ let inspect v ~depth ~options =
           Format.sprintf "{ Observer %s }"
             (options##stylize (Unique.to_str loc) `string)
 
-let make ?label read =
+let make ?label ?once read =
   let gen = match label with
     | Some (label) -> Unique.make_with_label ~label
     | None -> defaultGen
   in
   let loc = Unique.value gen in
-  let obs = Observe { read; loc; isActive = true } in
+  let once = Belt.Option.getWithDefault once false in
+  let obs = Observe { read; loc; isActive = true; once } in
   if Flags.pretty_output then Inspect.setInspector obs (inspect obs) else obs
 
 let makeInc read window =
@@ -63,8 +65,12 @@ let read f reader =
     | Observe { isActive = false } -> ()
     | Inc { window } ->
         Priority_queue.insert ((fun () -> f reader), Some window)
-    | Observe _ ->
+    | Observe { once = false } ->
         Priority_queue.insert ((fun () -> f reader), None)
+    | Observe observer ->
+        Priority_queue.insert (
+          (fun () -> f reader; observer.isActive <- false),
+          None)
 
 let exec f reader v rs =
   match reader with
