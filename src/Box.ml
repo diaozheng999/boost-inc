@@ -61,6 +61,9 @@ let of_opt ob : 'a option box =
 
 let eq ({ label = ka } as ba) ({ label = kb } as bb) = ba == bb || ka == kb
 
+let mk_eq eqv ({ label = ka; value = va } as ba) ({ label = kb; value = vb } as bb) =
+  ba == bb || ka == kb || eqv va vb
+
 let value { value } = value
 
 let idx { label } = label

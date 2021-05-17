@@ -46,6 +46,8 @@ val str : string -> string var
 
 val make_with_custom_hash_function : hash:('a -> string) -> 'a -> 'a var
 
+val make_custom : hash:('a -> string) -> equal:('a -> 'a -> bool) -> 'a -> 'a var
+
 val make_assuming_same_type : ?label:string -> 'a -> 'a var
 
 val of_combinator : 'a Box.t cc -> 'a var

@@ -146,3 +146,6 @@ let make_var = createVar
 let change_eagerly = changeEagerly
 
 let make_assuming_same_type = createAssumingSameType
+
+let make_custom ~hash ~equal v =
+  make_var ~eq:(Box.mk_eq equal) (Box.with_custom_hash_function ~hash) v
