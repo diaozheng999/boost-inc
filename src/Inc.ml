@@ -14,6 +14,8 @@ module Promise = Promise
 
 module Let_syntax = Let_syntax
 
-include Map
+include Map2
+
+module Memo = Map
 
 let (>>>) = Var.(>>>)
