@@ -1,9 +1,9 @@
   
 {
   "$schema": "https://raw.githubusercontent.com/rescript-lang/rescript-compiler/master/docs/docson/build-schema.json",
-  "name": "yalib-inc",
-  "namespace": true,
-  "version": "0.1.0-unstable.0",
+  "name": "@nasi/boost-inc",
+  "namespace": "boost-inc",
+  "version": "0.1.0-unstable.12",
   "sources": {
     "dir" : "src",
     "subdirs" : true
@@ -14,7 +14,7 @@
     "suffix": ".bs.js"
   },
   "bs-dependencies": [
-    "yalib"
+    "@nasi/re-boost"
   ],
   "warnings": {
     "number": "-44",

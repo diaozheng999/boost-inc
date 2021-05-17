@@ -1,9 +1,9 @@
 open Basis
 open Flags
-open Yalib.Unique
+open Boost.Unique
 open Types_internal
 
-type unique = Yalib.Unique.t
+type unique = Boost.Unique.t
 
 type index = unique
 
@@ -19,9 +19,9 @@ let init () = ()
 
 let prim k n = of_str (k ^ string_of_int n)
 
-let as_uniq = Yalib.Unique.of_str
+let as_uniq = Boost.Unique.of_str
 
-let uniq_to_string = Yalib.Unique.to_str
+let uniq_to_string = Boost.Unique.to_str
 
 let inspect box ~depth:_ ~options =
   let child = Inspect.withOptions box.value ~options in
@@ -50,7 +50,7 @@ let with_custom_hash_function ~hash value =
 
 let copy box =
   let { label; value } = box in
-  create ~label:(Yalib.Unique.to_str label ^ "_copy") value
+  create ~label:(Boost.Unique.to_str label ^ "_copy") value
 
 let of_opt ob : 'a option box =
   match ob with
