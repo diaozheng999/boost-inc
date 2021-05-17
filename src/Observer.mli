@@ -8,7 +8,7 @@ val unsub: 'a t -> unit
 
 val inspect: 'a observer -> 'a observer Inspect.inspector
 
-val make: ?label:string -> ('a -> unit) -> 'a observer
+val make: ?label:string -> ?once:bool -> ('a -> unit) -> 'a observer
 
 val makeInc: ('a -> unit) -> Time.window -> 'a observer
 

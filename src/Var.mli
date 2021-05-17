@@ -10,6 +10,7 @@ type 'a var = {
   deref: unit -> 'a;
   subscribe: ('a -> unit) -> unit -> unit;
   subscribe_box: ('a Box.t -> unit) -> unit -> unit;
+  subscribe_once: ('a -> unit) -> unit;
   subscribe_uncurried: (('a -> unit [@bs]) -> (unit -> unit [@bs]) [@bs]);
   subscribe_box_uncurried: (('a Box.t -> unit [@bs]) -> (unit -> unit [@bs]) [@bs]);
   change_to : ?exec_after:('a -> unit) -> ('a -> 'a) -> unit;
@@ -45,6 +46,8 @@ val opt : 'a option -> 'a option var
 val str : string -> string var
 
 val make_with_custom_hash_function : hash:('a -> string) -> 'a -> 'a var
+
+val make_custom : hash:('a -> string) -> equal:('a -> 'a -> bool) -> 'a -> 'a var
 
 val make_assuming_same_type : ?label:string -> 'a -> 'a var
 

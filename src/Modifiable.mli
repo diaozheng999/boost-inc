@@ -34,3 +34,5 @@ val observe: 'a modref -> ('a -> 'b) -> 'b
 
 val attachObserver: 'a modref -> ?label:string -> ('a -> unit) -> 'a Observer.t
 val attachObserver1: 'a modref -> ?label:string -> ('a -> unit) Js.Fn.arity1 -> 'a Observer.t
+
+val attach_observer_once : 'a modref -> ?label:string -> ('a -> unit) -> 'a Observer.t

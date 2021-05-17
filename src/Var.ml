@@ -10,6 +10,7 @@ type 'a var = {
   deref : unit -> 'a;
   subscribe : ('a -> unit) -> unit -> unit;
   subscribe_box : ('a Box.t -> unit) -> unit -> unit;
+  subscribe_once : ('a -> unit) -> unit;
   subscribe_uncurried : ((('a -> unit)[@bs]) -> (unit -> unit[@bs])[@bs]);
   subscribe_box_uncurried :
     ((('a Box.t -> unit)[@bs]) -> (unit -> unit[@bs])[@bs]);
@@ -57,6 +58,13 @@ let subscribeBox1 ?label modref =
 let subscribe ?label modref f =
   subscribeBox ?label modref (fun v -> f (Box.valueOf v))
 
+let subscribe_once ?label modref f =
+  ignore (
+    Modifiable.attach_observer_once
+      modref
+      ?label
+      (fun b -> f (Box.valueOf b)) : 'a Observer.t)
+
 let subscribe1 ?label modref =
   let staged = subscribeBox1 ?label modref in
   fun [@bs] f -> (staged (fun [@bs] v -> (f (Box.valueOf v) [@bs])) [@bs])
@@ -66,6 +74,7 @@ let createVarFromModref ?(eq = Box.eq) ?label create modref =
   let subscribe_box_uncurried = subscribeBox1 ?label modref in
   let subscribe = subscribe ?label modref in
   let subscribe_uncurried = subscribe1 ?label modref in
+  let subscribe_once = subscribe_once ?label modref in
   let deref () = Modifiable.deref modref |> Box.valueOf in
   let rec v =
     {
@@ -75,8 +84,9 @@ let createVarFromModref ?(eq = Box.eq) ?label create modref =
       create;
       eq;
       subscribe;
-      subscribe_uncurried;
       subscribe_box;
+      subscribe_once;
+      subscribe_uncurried;
       subscribe_box_uncurried;
       changeEagerly = (fun a -> changeEagerly v a);
       subscribe1 = subscribe_uncurried;
@@ -146,3 +156,6 @@ let make_var = createVar
 let change_eagerly = changeEagerly
 
 let make_assuming_same_type = createAssumingSameType
+
+let make_custom ~hash ~equal v =
+  make_var ~eq:(Box.mk_eq equal) (Box.with_custom_hash_function ~hash) v
