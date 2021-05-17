@@ -3,7 +3,7 @@
   "$schema": "https://raw.githubusercontent.com/rescript-lang/rescript-compiler/master/docs/docson/build-schema.json",
   "name": "@nasi/boost-inc",
   "namespace": "boost-inc",
-  "version": "0.1.0-unstable.12",
+  "version": "0.1.0-unstable.13",
   "sources": {
     "dir" : "src",
     "subdirs" : true
