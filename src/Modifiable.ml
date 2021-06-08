@@ -84,6 +84,25 @@ let write' comp modr v =
         (modr := Write (v, []);
         addReadersToQ rs modr)
 
+let change_async comp modr v =
+  Js.Promise.make (fun ~resolve ~reject:_ ->
+    let resolver = Observer.make
+      ~label:"Promise.resolve"
+      ~once:true
+      (fun _ ->
+        let unit = () in
+        resolve unit [@bs]) in
+    match !modr with
+    | Empty ->
+        modr := Write (v, []);
+        Observer.read (readAtTime modr) resolver  
+    | Write (v', rs) ->
+        if comp v v' then let unit = () in resolve unit [@bs]
+        else (
+          modr := Write (v, []);
+          Observer.read (readAtTime modr) resolver;
+          addReadersToQ rs modr ))  
+
 let write modr v = write' Box.eq modr v
 
 let deref modr =

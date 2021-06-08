@@ -5,6 +5,7 @@ type 'a var = {
   modref: 'a Box.t modref;
   change: 'a -> unit;
   create: 'a -> 'a Box.t;
+  change_async : 'a -> unit Js.Promise.t;
   eq: 'a Box.t equality;
   change_eagerly: 'a -> unit;
   deref: unit -> 'a;

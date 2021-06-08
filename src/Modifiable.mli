@@ -16,9 +16,11 @@ val read: 'a modref -> ('a -> changeable) -> changeable
 val write: 'a Box.t modref -> 'a Box.t -> changeable
 val write': 'a equality -> 'a modref -> 'a -> changeable
 
+
 val change: 'a Box.t modref -> 'a Box.t -> unit
 val change': 'a equality -> 'a modref -> 'a -> unit
 val change'': 'a modref -> 'a -> unit
+val change_async : 'a equality -> 'a modref -> 'a -> unit Js.Promise.t
 
 val deref: 'a modref -> 'a
 val deref': 'a modref -> 'a option

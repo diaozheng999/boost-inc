@@ -2,9 +2,10 @@ open Basis
 open Combinators
 
 type 'a var = {
-  modref : 'a Box.t modref;
-  change : 'a -> unit;
-  create : 'a -> 'a Box.t;
+  modref: 'a Box.t modref;
+  change: 'a -> unit;
+  create: 'a -> 'a Box.t;
+  change_async : 'a -> unit Js.Promise.t;
   eq : 'a Box.t equality;
   change_eagerly : 'a -> unit;
   deref : unit -> 'a;
@@ -24,6 +25,10 @@ type 'a var = {
 }
 
 type 'a t = 'a var
+
+let change_async ( { modref; create; eq } : 'a var) a =
+  let next = create a in
+  Modifiable.change_async eq modref next
 
 let change ({ modref; create; eq } : 'a var) a =
   let next = create a in
@@ -81,6 +86,7 @@ let createVarFromModref ?(eq = Box.eq) ?label create modref =
       modref;
       change = (fun a -> change v a);
       change_eagerly = (fun a -> changeEagerly v a);
+      change_async = (fun a -> change_async v a);
       create;
       eq;
       subscribe;
