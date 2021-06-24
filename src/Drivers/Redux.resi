@@ -4,7 +4,7 @@ type store<'a, 's>
 
 type middleware<'a, 's> = (.store<'a, 's>) => (.dispatcher<'a>) => dispatcher<'a>
 
-type selector<'s, 'a> = (.Js.t<'s>) => 'a
+type selector<'s, 'a> = (.'s) => 'a
 
 type outcome<'a> =
   | NoOutcome

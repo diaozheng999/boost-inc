@@ -9,11 +9,11 @@ type middleware<'a, 's> = (.store<'a, 's>) => (.dispatcher<'a>) => dispatcher<'a
 
 exception Unattached
 
-@bs.send external getState: (store<'a, 's>) => Js.t<'s> = "getState"
+@bs.send external getState: (store<'a, 's>) => 's = "getState"
 @bs.send external dispatch: (store<'a, 's>, 'a) => unit = "dispatch"
 @bs.send external subscribe: (store<'a, 's>, () => unit) => unit = "subscribe"
 
-type selector<'s, 'a> = (.Js.t<'s>) => 'a
+type selector<'s, 'a> = (.'s) => 'a
 
 type outcome<'a> =
   | NoOutcome
@@ -26,13 +26,13 @@ type unit_outcome =
   | N_Stop
 
 type redux_driver_state<'a, 's> = {
-  mutable readers: array<(Js.t<'s>) => unit>,
+  mutable readers: array<('s) => unit>,
   mutable shouldPropagate: bool,
   mutable dispatch: dispatcher<'a>,
   mutable subscribers: array<(.unit) => unit>,
   mutable actionInterceptors: array<('a) => unit_outcome>,
   mutable subscribedToStore: bool,
-  mutable getState: () => Js.t<'s>,
+  mutable getState: () => 's,
 }
 
 type redux_driver_options<'a> = {

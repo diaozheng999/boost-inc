@@ -109,3 +109,6 @@ let custom inspector elem =
     with_ inspector elem ~options
   else
     withOptions elem ~options
+
+let stylize options arg1 arg2 =
+  options##stylize arg1 arg2

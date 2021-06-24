@@ -1,6 +1,6 @@
 {
   "name": "@nasi/boost-inc",
-  "version": "0.1.0-unstable.17",
+  "version": "0.2.0-unstable.0",
   "scripts": {
     "build": "bsb -make-world",
     "clean": "bsb -clean-world",
@@ -13,7 +13,7 @@
   "license": "MIT",
   "description": "Self-adjusting Computation by Umut Acar",
   "dependencies": {
-    "@nasi/re-boost": "0.1.0-unstable.4",
+    "@nasi/re-boost": "0.1.0-unstable.5",
     "util": "^0.12.3"
   },
   "devDependencies": {
