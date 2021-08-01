@@ -1,0 +1,22 @@
+{
+  "dependencies": {
+    "ocaml": "4.12.x",
+    "@opam/dune": "~2.9.0",
+    "@opam/reason": "*",
+    "melange": "melange-re/melange"
+  },
+  "devDependencies": {
+    "@opam/ocamlformat": "0.18.0",
+    "@opam/ocaml-lsp-server": "1.7.0"
+  },
+  "esy": {
+    "buildsInSource": "unsafe",
+    "build": "bsb -make-world"
+  },
+  "installConfig": {
+    "pnp": false
+  },
+  "resolutions": {
+    "melange": "github:diaozheng999/melange#4255ba864d1d1c7622e6653427651dc20414af44"
+  }
+}

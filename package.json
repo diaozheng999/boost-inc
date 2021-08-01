@@ -14,6 +14,7 @@
   "description": "Self-adjusting Computation by Umut Acar",
   "dependencies": {
     "@nasi/re-boost": "0.1.0-unstable.5",
+    "@rescript/std": "diaozheng999/melange-stdlib",
     "util": "^0.12.3"
   },
   "devDependencies": {

@@ -21,5 +21,6 @@
     "error" : "+101"
   },
   "ppx-flags": [],
-  "refmt": 3
+  "refmt": 3,
+  "external-stdlib" : "@rescript/std"
 }

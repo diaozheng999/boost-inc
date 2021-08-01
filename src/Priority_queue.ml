@@ -31,6 +31,12 @@ let validate elt =
 
 let insert e = push (!queue) e ~p:e 
 
-let findMin () = pop (!queue) |> validate
+let insert_async e = insert e; Js.Promise.resolve ()
 
-let deleteMin () = pop (!queue) |> validate |> Belt.Option.getExn
+let find_min () = pop (!queue) |> validate
+
+let findMin = find_min
+
+let delete_min () = pop (!queue) |> validate |> Belt.Option.getExn
+
+let deleteMin = delete_min
