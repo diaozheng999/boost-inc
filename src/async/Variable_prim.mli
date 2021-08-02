@@ -1,5 +1,3 @@
-val none_addr : Address.t
-
 val int : ?name:string -> int -> int Variable.t
 
 val str : ?name:string -> string -> string Variable.t

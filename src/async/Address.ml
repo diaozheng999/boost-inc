@@ -11,3 +11,7 @@ external str : string -> t = "%identity"
 external strify : ('a -> string[@bs]) -> ('a -> t[@bs]) = "%identity"
 
 external as_uniq : t -> Boost.Unique.t = "%identity"
+
+external unsafe_prim_to_addr : 'a -> t = "%identity"
+
+let none_addr : t = [%raw "Symbol.for('boost-inc/none')"]

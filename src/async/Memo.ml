@@ -5,6 +5,9 @@ type ('a, 'b) t = {
   result : 'b Memo_table.t;
 }
 
+type ('a, 'b) bind_t = { arg : 'a Memo_table.t; result : 'b Memo_table.t }
+
+
 let memoize pad key ~next =
   let run_memoized f r =
     let t1 = Propagate.state.latest in
@@ -51,3 +54,14 @@ let lift memo key f =
         Variable.write result b |> Js.Promise.then_ (fun () -> f result)
       in
       Js.Promise.resolve resolved)
+
+let mk_map f =
+  let memo = Memo_table.create ~name:"mk_map$memo" () in
+  fun v ->
+    let result = Variable.make_intermediate () in
+    Variable.read_with_address v
+    |> Js.Promise.then_ (fun (value, key) ->
+           memoize memo (Address.as_uniq key) ~next:(fun () ->
+               f value
+               |> Js.Promise.then_ (Variable.write result)
+               |> Js.Promise.then_ (fun () -> Js.Promise.resolve result)))

@@ -14,15 +14,28 @@ type 'a t = {
 
 let intermediate_gen = Unique.make_with_label ~label:"intermediate"
 
+external unsafe_prim_to_addr : 'a -> Address.t = "%identity"
+
+let rehydrate value =
+  (value.read () [@bs])
+  |> Js.Promise.then_ (fun (resolved_value, addr) ->
+         value.last_value <- Some resolved_value;
+         value.last_address <- Some addr;
+         Js.Promise.resolve (resolved_value, addr))
+
 let read_and_update_value value =
   match value.last_value with
   | Some v -> Js.Promise.resolve v
   | None ->
-      (value.read () [@bs])
-      |> Js.Promise.then_ (fun (resolved_value, addr) ->
-             value.last_value <- Some resolved_value;
-             value.last_address <- Some addr;
+      rehydrate value
+      |> Js.Promise.then_ (fun (resolved_value, _) ->
              Js.Promise.resolve resolved_value)
+
+let read_with_address value =
+  match (value.last_value, value.last_address) with
+
+  | Some value, Some addr -> Js.Promise.resolve (value, addr)
+  | _ -> rehydrate value
 
 let fire_static_observers ~variable ~value =
   Linked_list.for_each_node variable.stable_observers ~f:(fun node ->
@@ -59,19 +72,27 @@ let write variable value =
         |> Bs_interop.unstable_promise_then_unit_exec read
   in
 
-  let exec = fun [@bs] () ->
+  let exec =
+   fun [@bs] () ->
     Propagate.Task_queue.insert insert;
     Js.Promise.resolve ()
   in
 
   Propagate.when_not_propagating exec
 
+let compute_address_prim =
+ fun [@bs] v ->
+  match Js.typeof v with
+  | "undefined" -> Address.none_addr
+  | "number" | "string" | "boolean" | "symbol" -> Address.unsafe_prim_to_addr v
+  | _ -> Hash.hash v |> Address.int
+
 let make_intermediate () =
   let read =
    fun [@bs] () ->
     failwith "Intermediates do not have an explicit `read` function."
   in
-  let compute_address = fun [@bs] v -> Boost.Hash.hash v |> Address.int in
+  let compute_address = compute_address_prim in
   let write = fun [@bs] _ _ -> Promise.resolve () in
   {
     name = Unique.value intermediate_gen;
@@ -83,6 +104,12 @@ let make_intermediate () =
     observers = Linked_list.make ();
     stable_observers = Linked_list.make ();
   }
+
+let make_intermediate_async value =
+  let variable = make_intermediate () in
+  variable.last_value <- Some value;
+  variable.last_address <- Some (variable.compute_address value [@bs]);
+  Js.Promise.resolve variable
 
 let make ?read ?write ?compute_address ?last_value ?last_address name =
   let read =
@@ -102,8 +129,8 @@ let make ?read ?write ?compute_address ?last_value ?last_address name =
 
   let last_address =
     match last_address with
-      | None -> Belt.Option.mapU last_value compute_address
-      | _ -> last_address
+    | None -> Belt.Option.mapU last_value compute_address
+    | _ -> last_address
   in
   {
     name;
@@ -115,4 +142,3 @@ let make ?read ?write ?compute_address ?last_value ?last_address name =
     observers = Linked_list.make ();
     stable_observers = Linked_list.make ();
   }
-
