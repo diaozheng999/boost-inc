@@ -1,22 +1,23 @@
 open Boost
 
 type 'a observer = {
-  id: Unique.t;
-  next: ('a -> unit Js.Promise.t [@bs]);
-  window: Time.window;
+  id : Unique.t;
+  next : ('a -> unit Js.Promise.t[@bs]);
+  window : Time.window;
 }
 
 type 'a static_observer = {
-  id: Unique.t;
-  on_change: ('a -> unit [@bs]);
-  once: bool;
-  mutable is_active: bool;
+  id : Unique.t;
+  on_change : ('a -> unit[@bs]);
+  once : bool;
+  mutable is_active : bool;
 }
 
 let default_gen = Unique.make_with_label ~label:"obs2"
 
-let static_uncurried ?label ?(once=false) on_change =
-  let gen = match label with
+let static_uncurried ?label ?(once = false) on_change =
+  let gen =
+    match label with
     | Some label -> Unique.make_with_label ~label
     | None -> default_gen
   in
@@ -24,7 +25,8 @@ let static_uncurried ?label ?(once=false) on_change =
   { id; once; on_change; is_active = true }
 
 let inc_uncurried ?label ~window next =
-  let gen = match label with
+  let gen =
+    match label with
     | Some label -> Unique.make_with_label ~label
     | None -> default_gen
   in
