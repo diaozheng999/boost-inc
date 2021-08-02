@@ -14,3 +14,9 @@ external toString : 'a -> string = "toString" [@@bs.send]
 let ignore' = fun [@bs] _ -> ()
 
 let hash = Boost.Hash.hash
+
+let get_uniq_with_default ?label default_gen =
+  let gen = match label with
+    | Some label -> Boost.Unique.make_with_label ~label
+    | None -> default_gen in
+  Boost.Unique.value gen

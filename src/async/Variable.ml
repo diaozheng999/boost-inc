@@ -84,7 +84,7 @@ let make_intermediate () =
     stable_observers = Linked_list.make ();
   }
 
-let make ?read ?write ?compute_address ?last_value ~name =
+let make ?read ?write ?compute_address ?last_value ?last_address name =
   let read =
     Belt.Option.getWithDefault read (fun [@bs] () ->
         let n = Unique.to_str name in
@@ -100,7 +100,11 @@ let make ?read ?write ?compute_address ?last_value ~name =
         Boost.Hash.hash v |> Address.int)
   in
 
-  let last_address = Belt.Option.mapU last_value compute_address in
+  let last_address =
+    match last_address with
+      | None -> Belt.Option.mapU last_value compute_address
+      | _ -> last_address
+  in
   {
     name;
     last_value;
@@ -111,3 +115,4 @@ let make ?read ?write ?compute_address ?last_value ~name =
     observers = Linked_list.make ();
     stable_observers = Linked_list.make ();
   }
+
