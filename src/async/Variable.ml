@@ -59,7 +59,10 @@ let write variable value =
         |> Bs_interop.unstable_promise_then_unit_exec read
   in
 
-  let exec () = Propagate.Task_queue.insert insert in
+  let exec = fun [@bs] () ->
+    Propagate.Task_queue.insert insert;
+    Js.Promise.resolve ()
+  in
 
   Propagate.when_not_propagating exec
 
@@ -74,6 +77,34 @@ let make_intermediate () =
     name = Unique.value intermediate_gen;
     last_value = None;
     last_address = None;
+    read;
+    write;
+    compute_address;
+    observers = Linked_list.make ();
+    stable_observers = Linked_list.make ();
+  }
+
+let make ?read ?write ?compute_address ?last_value ~name =
+  let read =
+    Belt.Option.getWithDefault read (fun [@bs] () ->
+        let n = Unique.to_str name in
+        failwith {j|Variable $(n) did not implement a read function. |j})
+  in
+
+  let write =
+    Belt.Option.getWithDefault write (fun [@bs] _ _ -> Promise.resolve ())
+  in
+
+  let compute_address =
+    Belt.Option.getWithDefault compute_address (fun [@bs] v ->
+        Boost.Hash.hash v |> Address.int)
+  in
+
+  let last_address = Belt.Option.mapU last_value compute_address in
+  {
+    name;
+    last_value;
+    last_address;
     read;
     write;
     compute_address;

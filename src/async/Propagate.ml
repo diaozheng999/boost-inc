@@ -12,11 +12,15 @@ type task_entry = {
   window : Time.window option;
 }
 
+type propagate_owners =
+  | Variable_update
+  | Propagate
+
 let state =
   let time = Time.create () in
   { latest = time; memo = time; is_propagating = false }
 
-let lock = Mutex.make ()
+let mutex = Asym_lock.make ~mutex:(Mutex.make ())
 
 module Task_queue = struct
   type t = task_entry
@@ -46,12 +50,12 @@ module Task_queue = struct
 end
 
 let execute ~loop =
-  let f () =
+  let f = fun [@bs] () ->
     state.is_propagating <- true;
     (loop () [@bs])
     |> Bs_interop.exec_unit_finally (fun () -> state.is_propagating <- false)
   in
-  Mutex.lock lock f
+  Asym_lock.acquire ~mutex ~owner:Propagate f
 
 let until ~time =
   let rec loop =
@@ -97,7 +101,4 @@ let exec () =
   execute ~loop
 
 let when_not_propagating f =
-  if state.is_propagating then
-    Mutex.acquire_readonly_access lock
-    |> Bs_interop.unstable_promise_then_unit_exec f
-  else Js.Promise.resolve ((Bs_interop.arity0 f) () [@bs])
+  Asym_lock.acquire ~mutex ~owner:Variable_update f
