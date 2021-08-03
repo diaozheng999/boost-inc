@@ -5,6 +5,7 @@ type propagate_state = {
   mutable latest : Time.t;
   mutable memo : Time.t;
   mutable is_propagating : bool;
+  mutable propagation_began_at : float;
 }
 
 type task_entry = {
@@ -12,13 +13,16 @@ type task_entry = {
   window : Time.window option;
 }
 
-type propagate_owners =
-  | Variable_update
-  | Propagate
+type propagate_owners = Variable_update | Propagate
 
 let state =
   let time = Time.create () in
-  { latest = time; memo = time; is_propagating = false }
+  {
+    latest = time;
+    memo = time;
+    is_propagating = false;
+    propagation_began_at = 0.;
+  }
 
 let mutex = Asym_lock.make ~mutex:(Mutex.make ())
 
@@ -50,23 +54,30 @@ module Task_queue = struct
 end
 
 let execute ~loop =
-  let f = fun [@bs] () ->
+  let f =
+   fun [@bs] () ->
+    state.propagation_began_at <- Js.Date.now ();
     state.is_propagating <- true;
-    (loop () [@bs])
-    |> Bs_interop.exec_unit_finally (fun () -> state.is_propagating <- false)
+    (loop 0 [@bs])
+    |> Bs_interop.exec_unit_finally (fun n ->
+           state.is_propagating <- false;
+           Js.log "Propagation complete.";
+           Printf.ksprintf Js.log "  Executed %d task(s)." n;
+           Printf.ksprintf Js.log "  Took %f s."
+             ((Js.Date.now () -. state.propagation_began_at) /. 1000.))
   in
   Asym_lock.acquire ~mutex ~owner:Propagate f
 
 let until ~time =
   let rec loop =
-   fun [@bs] () ->
+   fun [@bs] n ->
     match Task_queue.find_min () with
-    | None -> Js.Promise.resolve ()
+    | None -> Js.Promise.resolve n
     | Some { task; window = None } ->
-        (task () [@bs]) |> Bs_interop.promise_then_0 loop
+        (task () [@bs]) |> Js.Promise.then_ (fun () -> (loop (n + 1) [@bs]))
     | Some { task; window = Some (start, stop) } ->
-        if Time.isSplicedOut start then loop () [@bs]
-        else if Time.compare time stop = Less then Js.Promise.resolve ()
+        if Time.isSplicedOut start then loop n [@bs]
+        else if Time.compare time stop = Less then Js.Promise.resolve n
         else
           let finger = state.memo in
           state.latest <- start;
@@ -75,19 +86,19 @@ let until ~time =
           |> Js.Promise.then_ (fun () ->
                  state.memo <- finger;
                  Time.spliceOut state.latest stop;
-                 loop () [@bs])
+                 loop (n + 1) [@bs])
   in
   execute ~loop
 
 let exec () =
   let rec loop =
-   fun [@bs] () ->
+   fun [@bs] n ->
     match Task_queue.find_min () with
-    | None -> Js.Promise.resolve ()
+    | None -> Js.Promise.resolve n
     | Some { task; window = None } ->
-        (task () [@bs]) |> Bs_interop.promise_then_0 loop
+        (task () [@bs]) |> Js.Promise.then_ (fun () -> (loop (n + 1) [@bs]))
     | Some { task; window = Some (start, stop) } ->
-        if Time.isSplicedOut start then loop () [@bs]
+        if Time.isSplicedOut start then loop n [@bs]
         else
           let finger = state.memo in
           state.latest <- start;
@@ -96,9 +107,8 @@ let exec () =
           |> Js.Promise.then_ (fun () ->
                  state.memo <- finger;
                  Time.spliceOut state.latest stop;
-                 loop () [@bs])
+                 loop (n + 1) [@bs])
   in
   execute ~loop
 
-let when_not_propagating f =
-  Asym_lock.acquire ~mutex ~owner:Variable_update f
+let when_not_propagating f = Asym_lock.acquire ~mutex ~owner:Variable_update f

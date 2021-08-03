@@ -33,7 +33,6 @@ let read_and_update_value value =
 
 let read_with_address value =
   match (value.last_value, value.last_address) with
-
   | Some value, Some addr -> Js.Promise.resolve (value, addr)
   | _ -> rehydrate value
 
@@ -142,3 +141,19 @@ let make ?read ?write ?compute_address ?last_value ?last_address name =
     observers = Linked_list.make ();
     stable_observers = Linked_list.make ();
   }
+
+let ll_len list =
+  let rec count node n =
+    let open Linked_list in
+    match node with None -> n | Some { next; _ } -> count next (n + 1)
+  in
+  count (Linked_list.head list) 0
+
+let describe variable =
+  Js.log "===== begin variable description =====";
+  Js.log3 "Variable" variable.name ":";
+  Js.log2 "  value:" variable.last_value;
+  Js.log2 "  address:" variable.last_address;
+  Js.log2 "  changeable observer count:" (ll_len variable.observers);
+  Js.log2 "  stable observer count:" (ll_len variable.stable_observers);
+  Js.log "===== end variable description ====="
