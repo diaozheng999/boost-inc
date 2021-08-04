@@ -13,7 +13,7 @@ type task_entry = {
   window : Time.window option;
 }
 
-type propagate_owners = Variable_update | Propagate
+type propagate_owners = [`Variable_update | `Propagate]
 
 let state =
   let time = Time.create () in
@@ -24,7 +24,7 @@ let state =
     propagation_began_at = 0.;
   }
 
-let mutex = Asym_lock.make ~mutex:(Mutex.make ())
+let mutex : propagate_owners Asym_lock.t = Asym_lock.make ~mutex:(Mutex.make ())
 
 module Task_queue = struct
   type t = task_entry
@@ -53,6 +53,11 @@ module Task_queue = struct
     | Some value -> if is_valid value then Some value else find_min ()
 end
 
+let insert_time () =
+  let t = Time.add state.latest in
+  state.latest <- t;
+  t
+
 let execute ~loop =
   let f =
    fun [@bs] () ->
@@ -66,7 +71,7 @@ let execute ~loop =
            Printf.ksprintf Js.log "  Took %f s."
              ((Js.Date.now () -. state.propagation_began_at) /. 1000.))
   in
-  Asym_lock.acquire ~mutex ~owner:Propagate f
+  Asym_lock.acquire ~mutex ~owner:`Propagate f
 
 let until ~time =
   let rec loop =
@@ -111,4 +116,4 @@ let exec () =
   in
   execute ~loop
 
-let when_not_propagating f = Asym_lock.acquire ~mutex ~owner:Variable_update f
+let when_not_propagating f = Asym_lock.acquire ~mutex ~owner:`Variable_update f

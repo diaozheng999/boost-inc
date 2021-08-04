@@ -16,6 +16,8 @@ let intermediate_gen = Unique.make_with_label ~label:"intermediate"
 
 external unsafe_prim_to_addr : 'a -> Address.t = "%identity"
 
+external address_of : 'a t -> Unique.t = "last_address" [@@bs.get]
+
 let rehydrate value =
   (value.read () [@bs])
   |> Js.Promise.then_ (fun (resolved_value, addr) ->
@@ -23,7 +25,7 @@ let rehydrate value =
          value.last_address <- Some addr;
          Js.Promise.resolve (resolved_value, addr))
 
-let read_and_update_value value =
+let get_value value =
   match value.last_value with
   | Some v -> Js.Promise.resolve v
   | None ->
@@ -31,7 +33,7 @@ let read_and_update_value value =
       |> Js.Promise.then_ (fun (resolved_value, _) ->
              Js.Promise.resolve resolved_value)
 
-let read_with_address value =
+let get_value_with_address value =
   match (value.last_value, value.last_address) with
   | Some value, Some addr -> Js.Promise.resolve (value, addr)
   | _ -> rehydrate value
@@ -71,13 +73,35 @@ let write variable value =
         |> Bs_interop.unstable_promise_then_unit_exec read
   in
 
-  let exec =
-   fun [@bs] () ->
-    Propagate.Task_queue.insert insert;
+  let exec () =
+    let () =
+      match variable.last_address with
+      | Some e when not (Address.eq e (variable.compute_address value [@bs])) ->
+          Propagate.Task_queue.insert insert
+      | _ -> ()
+    in
     Js.Promise.resolve ()
   in
+  exec ()
 
-  Propagate.when_not_propagating exec
+let change variable value =
+  Propagate.when_not_propagating (fun [@bs] () -> write variable value)
+
+let read ?label variable next =
+  let exec () =
+    let t1 = ref Propagate.state.latest in
+    get_value variable
+    |> Bs_interop.then_ (fun v ->
+           t1 := Propagate.insert_time ();
+           v)
+    |> Js.Promise.then_ next
+    |> Bs_interop.then_ (fun () ->
+           let t2 = Propagate.insert_time () in
+           let observer = Observer2.inc ?label ~window:(!t1, t2) next in
+           let _ = Linked_list.add_to_end variable.observers observer in
+           ())
+  in
+  exec ()
 
 let compute_address_prim =
  fun [@bs] v ->

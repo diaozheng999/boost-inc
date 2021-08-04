@@ -14,7 +14,7 @@ async function main() {
   const b = await f(a)
   Variable.describe(a)
   Variable.describe(b)
-  await Variable.write(a, 3)
+  await Variable.change(a, 3)
   Variable.describe(a)
   Variable.describe(b)
   await Propagate.exec()

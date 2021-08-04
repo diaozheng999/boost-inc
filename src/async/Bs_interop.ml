@@ -10,6 +10,9 @@ external promise_then_1 : (('a -> 'b Js.Promise.t)[@bs]) -> 'b Js.Promise.t
   = "then"
   [@@bs.send.pipe: 'a Js.Promise.t]
 
+external then_ : ('a -> 'b) -> 'b Js.Promise.t = "then"
+  [@@bs.send.pipe: 'a Js.Promise.t]
+
 external exec_unit_finally : ('a -> unit) -> unit Js.Promise.t = "then"
   [@@bs.send.pipe: 'a Js.Promise.t]
 

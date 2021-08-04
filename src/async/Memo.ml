@@ -39,7 +39,7 @@ let memoize pad key ~next =
             reuse_result window
             |> Bs_interop.unstable_promise_then_unit_exec (fun () -> v))
   in
-  Propagate.when_not_propagating memoize'
+  memoize' () [@bs]
 
 let create_memo ~name () =
   let next = Memo_table.create ~name:(name ^ "$next") () in
@@ -56,12 +56,23 @@ let lift memo key f =
       Js.Promise.resolve resolved)
 
 let mk_map f =
-  let memo = Memo_table.create ~name:"mk_map$memo" () in
+  let memo = create_memo ~name:"mk_map" () in
   fun v ->
     let result = Variable.make_intermediate () in
-    Variable.read_with_address v
+    Variable.read ~label:"map" v (fun value ->
+      memoize memo (Variable.address_of v) ~next:(fun () ->
+        f value
+        |> Js.Promise.then_ (Variable.write result)
+        )
+    )
+    |> Js.Promise.then_ (fun () -> Js.Promise.resolve result)
+
+
+
+    (*
     |> Js.Promise.then_ (fun (value, key) ->
            memoize memo (Address.as_uniq key) ~next:(fun () ->
                f value
                |> Js.Promise.then_ (Variable.write result)
                |> Js.Promise.then_ (fun () -> Js.Promise.resolve result)))
+*)
