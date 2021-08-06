@@ -15,6 +15,11 @@ type task_entry = {
 
 type propagate_owners = [`Variable_update | `Propagate]
 
+type 'a inst = [
+  | `Read of 'a
+  | `Write of 'a
+]
+
 let state =
   let time = Time.create () in
   {

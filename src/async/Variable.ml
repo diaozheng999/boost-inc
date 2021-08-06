@@ -1,7 +1,7 @@
 open Basis
 open Boost
 
-type 'a t = {
+type 'a variable = {
   name : Unique.t;
   mutable last_value : 'a option;
   mutable last_address : Address.t option;
@@ -11,6 +11,8 @@ type 'a t = {
   observers : 'a Observer2.observer Linked_list.t;
   stable_observers : 'a Observer2.static_observer Linked_list.t;
 }
+
+type 'a t = 'a variable
 
 let intermediate_gen = Unique.make_with_label ~label:"intermediate"
 
@@ -84,9 +86,6 @@ let write variable value =
   in
   exec ()
 
-let change variable value =
-  Propagate.when_not_propagating (fun [@bs] () -> write variable value)
-
 let read ?label variable next =
   let exec () =
     let t1 = ref Propagate.state.latest in
@@ -103,6 +102,8 @@ let read ?label variable next =
   in
   exec ()
 
+let copy ?label ~src dst = read ?label src (write dst)
+
 let compute_address_prim =
  fun [@bs] v ->
   match Js.typeof v with
@@ -110,15 +111,19 @@ let compute_address_prim =
   | "number" | "string" | "boolean" | "symbol" -> Address.unsafe_prim_to_addr v
   | _ -> Hash.hash v |> Address.int
 
-let make_intermediate () =
+let make_intermediate ?label () =
+  let name = Unique.value (Belt.Option.getWithDefault label intermediate_gen) in
   let read =
    fun [@bs] () ->
-    failwith "Intermediates do not have an explicit `read` function."
+    failwith
+
+      {j|Intermediate `$(name)` do not have an explicit `read` function.|j}
+
   in
   let compute_address = compute_address_prim in
   let write = fun [@bs] _ _ -> Promise.resolve () in
   {
-    name = Unique.value intermediate_gen;
+    name;
     last_value = None;
     last_address = None;
     read;
