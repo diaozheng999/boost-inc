@@ -75,16 +75,17 @@ let write variable value =
         |> Bs_interop.unstable_promise_then_unit_exec read
   in
 
-  let exec () =
-    let () =
-      match variable.last_address with
-      | Some e when not (Address.eq e (variable.compute_address value [@bs])) ->
-          Propagate.Task_queue.insert insert
-      | _ -> ()
-    in
-    Js.Promise.resolve ()
-  in
-  exec ()
+  Js.log4 "Variable.write" value variable.name variable.last_address;
+  match variable.last_address with
+  | Some e when not (Address.eq e (variable.compute_address value [@bs])) ->
+      let () = Propagate.Task_queue.insert insert in
+      Js.Promise.resolve ()
+  | None ->
+      let address = (variable.compute_address value [@bs]) in
+      variable.last_value <- Some value;
+      variable.last_address <- Some address;
+      variable.write address value [@bs]
+  | _ -> Js.Promise.resolve ()
 
 let read ?label variable next =
   let exec () =
@@ -116,10 +117,9 @@ let make_intermediate ?label () =
   let read =
    fun [@bs] () ->
     failwith
-
       {j|Intermediate `$(name)` do not have an explicit `read` function.|j}
-
   in
+
   let compute_address = compute_address_prim in
   let write = fun [@bs] _ _ -> Promise.resolve () in
   {

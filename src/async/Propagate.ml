@@ -13,12 +13,9 @@ type task_entry = {
   window : Time.window option;
 }
 
-type propagate_owners = [`Variable_update | `Propagate]
+type propagate_owners = [ `Variable_update | `Propagate ]
 
-type 'a inst = [
-  | `Read of 'a
-  | `Write of 'a
-]
+type 'a inst = [ `Read of 'a | `Write of 'a ]
 
 let state =
   let time = Time.create () in
@@ -30,6 +27,8 @@ let state =
   }
 
 let mutex : propagate_owners Asym_lock.t = Asym_lock.make ~mutex:(Mutex.make ())
+
+let change_gen = Unique.make_with_label ~label:"Propagate.change"
 
 module Task_queue = struct
   type t = task_entry

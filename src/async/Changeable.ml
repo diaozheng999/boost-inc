@@ -17,7 +17,6 @@ external pack_read_spec :
   variable:'a Variable.t -> next:('a -> 'b t) -> 'b read_spec = ""
   [@@bs.obj]
 
-
 external get_variable : 'a read_spec -> 'b Variable.t = "variable" [@@bs.get]
 
 external get_next : 'a read_spec -> ('b -> 'a t[@bs]) = "next" [@@bs.get]
@@ -35,19 +34,15 @@ let frame_count = ref 0
 let execution_context : abs_t Linked_list.t = Linked_list.make ()
 
 module Stack = struct
-
   let push stack value =
     match stack with
-      | Some stack ->
-        let _ : int = Js.Array2.push stack value in
+    | Some stack ->
+        let (_ : int) = Js.Array2.push stack value in
         stack
-      | None -> [| value |]
+    | None -> [| value |]
 
   let get stack =
-    match stack with
-      | Some stack -> Some (Belt.Array.copy stack)
-      | None -> None
-
+    match stack with Some stack -> Some (Belt.Array.copy stack) | None -> None
 end
 
 let gen = Unique.make_with_label ~label:"action"
@@ -58,16 +53,30 @@ let build_stack changeable =
       Js.Array2.joinWith arr "/" ^ "/" ^ Unique.to_str changeable.name
   | _ -> Unique.to_str changeable.name
 
+let to_string changeable =
+  let name = build_stack changeable in
+  let action =
+    match changeable.action with
+    | Read spec ->
+        let v = get_variable spec in
+        let name = Unique.to_str v.Variable.name in
+        {j|Read $(name)|j}
+    | Write _ -> "Write"
+    | Act (label, _) -> {j|Act $(label)|j}
+  in
+  {j|$(action) ($(name))|j}
 
 let update_execution_context changeable =
   let _ = Linked_list.add_to_front execution_context (__abs changeable) in
   if !frame_count >= keep_last_n_frames then
-    let _ = Linked_list.remove_from_end execution_context in ()
-  else
-    frame_count := !frame_count + 1
+    let _ = Linked_list.remove_from_end execution_context in
+    ()
+  else frame_count := !frame_count + 1
 
 let rec act changeable dest =
   update_execution_context changeable;
+  if Flags.debug_async_changeable then
+    Js.log4 "Executing" (to_string changeable) "at" dest.Variable.name;
   match changeable.action with
   | Read reader ->
       let variable = get_variable reader in
@@ -107,29 +116,15 @@ let variable changeable =
   act changeable variable
   |> Bs_interop.unstable_promise_then_unit_exec (fun () -> variable)
 
-
-let to_string changeable = 
-  let name = build_stack changeable in
-  let action =
-    match changeable.action with
-      | Read spec ->
-        let v = get_variable spec in
-        let name = Unique.to_str v.Variable.name in
-        {j|Read $(name)|j}
-      | Write _ -> "Write"
-      | Act (label, _) -> {j|Act $(label)|j}
-  in
-  {j|$(action) ($(name))|j}
-
 let rec print_exec n node =
   let open Linked_list in
-  match n, node with
-    | _, None -> ()
-    | 0, Some _ -> Js.log "..."
-    | n, Some { value; next; _ } ->
+  match (n, node) with
+  | _, None -> ()
+  | 0, Some _ -> Js.log "..."
+  | n, Some { value; next; _ } ->
       Js.log2 n (to_string (__real value));
       print_exec (n - 1) next
 
 let log_execution_context () =
   Js.log "Execution Context";
-  print_exec (!frame_count) (Linked_list.head execution_context)
+  print_exec !frame_count (Linked_list.head execution_context)

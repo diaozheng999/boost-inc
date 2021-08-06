@@ -19,9 +19,10 @@ external ( >>| ) : 'a Js.Promise.t -> ('a -> 'b) -> 'b Js.Promise.t = "then"
 let mk_lift_cc_memo_gen = Unique.make_with_label ~label:"Memo$mk_lift_cc$copy"
 
 let mk_lift_cc_gen = Unique.make_with_label ~label:"Memo$mk_lift_cc"
+
 let mk_map_gen = Unique.make_with_label ~label:"Memo$mk_map"
 
-let memoize pad key ~(next : ('a Async_callback.t)) =
+let memoize pad key ~(next : 'a Async_callback.t) =
   let run_memoized f r =
     let t1 = Propagate.state.latest in
     Async_callback.act f
@@ -59,19 +60,28 @@ let create_memo ~name =
   let result = Memo_table.create ~name:(name ^ "$result") () in
   { arg; result }
 
+(* ('a, 'b) t -> 'a Variable.t -> ('a Variable.t -> 'b Async_callback.t) -> 'b Js.Promise.t *)
 let lift memo variable f =
   let key = Variable.address_of variable in
-  let memoized =
-    memoize memo.arg key ~next:(fun [@bs] next ->
-        let result = Variable.make_intermediate () in
-        let resolved b =
-          Variable.write result b >>= fun () ->
-          memoize memo.result key ~next:(f result)
-        in
-        next resolved [@bs])
+
+  let promise ~resolve ~reject:_ =
+    let (_ : _ Js.Promise.t) =
+      memoize memo.arg key ~next:(fun [@bs] next ->
+          let result = Variable.make_intermediate () in
+          let resolved b =
+            Variable.write result b >>= fun () ->
+            memoize memo.result key ~next:(f result)
+          in
+          (next resolved [@bs]))
+      >>= fun memoized ->
+      Variable.read variable (fun value ->
+          memoized value
+          |> Bs_interop.unstable_promise_then_unit_exec (fun result ->
+                 (resolve result [@bs])))
+    in
+    ()
   in
-  Js.Promise.all2 (memoized, Variable.get_value variable) >>= fun (exec, a) ->
-  exec a
+  Js.Promise.make promise
 
 let mk_lift ~name = lift (create_memo ~name)
 
@@ -92,13 +102,16 @@ let mk_lift_cc ?name ?stack () =
         Changeable.variable changeable >>= fun src ->
         Variable.copy ~label:(Unique.string mk_lift_cc_memo_gen) ~src dest
       in
-      fun [@bs] next -> next partial_applied [@bs]
+      fun [@bs] next ->
+        Js.log "mk_lift_cc.change";
+        next partial_applied [@bs]
     in
     lift memo variable change
   in
   fun variable f ->
-    Changeable.make ~label:(Unique.of_str "mk_lift_cc") ~stack ~kind:"mk_lift_cc"
-      (fun [@bs] dest -> lifted variable f >>= fun exec -> exec dest)
+    Changeable.make ~label:(Unique.of_str "mk_lift_cc")
+      ~stack ~kind:"mk_lift_cc" (fun [@bs] dest ->
+        lifted variable f >>= fun exec -> exec dest)
 
 let mk_map ?label ?stack a f =
   let gen = Belt.Option.getWithDefault label mk_map_gen in
@@ -108,9 +121,11 @@ let mk_map ?label ?stack a f =
   let lift = mk_lift ~name in
 
   let mapped aref =
-    let changeable = Changeable.read ~stack aref (fun aval ->
-        Changeable.make ~stack ~kind:"mk_map/map_and_write_result"
-          (fun [@bs] dest -> f aval >>= Variable.write dest)) in
+    let changeable =
+      Changeable.read ~stack aref (fun aval ->
+          Changeable.make ~stack ~kind:"mk_map/map_and_write_result"
+            (fun [@bs] dest -> f aval >>= Variable.write dest))
+    in
     Async_callback.return changeable
   in
   lift a mapped
