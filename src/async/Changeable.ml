@@ -13,6 +13,12 @@ type 'a t = {
   stack : Unique.t array option;
 }
 
+type metric = {
+  mutable read_count : int;
+  mutable write_count : int;
+  mutable step_count : int;
+}
+
 external pack_read_spec :
   variable:'a Variable.t -> next:('a -> 'b t) -> 'b read_spec = ""
   [@@bs.obj]
@@ -32,6 +38,8 @@ let keep_last_n_frames = 20
 let frame_count = ref 0
 
 let execution_context : abs_t Linked_list.t = Linked_list.make ()
+
+let statistics = { read_count = 0; write_count = 0; step_count = 0 }
 
 module Stack = struct
   let push stack value =
@@ -73,8 +81,22 @@ let update_execution_context changeable =
     ()
   else frame_count := !frame_count + 1
 
+let update_statistics changeable =
+  statistics.step_count <- statistics.step_count + 1;
+  match changeable.action with
+    | Read _ -> statistics.read_count <- statistics.read_count + 1
+    | Write _ -> statistics.write_count <- statistics.write_count + 1
+    | _ -> ()
+
+let reset_statistics () =
+  statistics.step_count <- 0;
+  statistics.read_count <- 0;
+  statistics.write_count <- 0
+
 let rec act changeable dest =
   update_execution_context changeable;
+  if Flags.record_metrics then
+    update_statistics changeable;
   if Flags.debug_async_changeable then
     Js.log4 "Executing" (to_string changeable) "at" dest.Variable.name;
   match changeable.action with

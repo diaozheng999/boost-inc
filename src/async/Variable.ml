@@ -181,8 +181,8 @@ let ll_len list =
 let describe variable =
   Js.log "===== begin variable description =====";
   Js.log3 "Variable" variable.name ":";
-  Js.log2 "  value:" variable.last_value;
   Js.log2 "  address:" variable.last_address;
+  Js.log2 "  value:" variable.last_value;
   Js.log2 "  changeable observer count:" (ll_len variable.observers);
   Js.log2 "  stable observer count:" (ll_len variable.stable_observers);
   Js.log "===== end variable description ====="

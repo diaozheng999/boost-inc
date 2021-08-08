@@ -47,12 +47,6 @@ let ( >>| ) a f = map a ~f
 
 let ( >>= ) a f = bind a ~f
 
-let ( let* ) a f = bind a ~f
-
-let ( let+ ) a f = map a ~f
-
-let ( and+ ) = both
-
 module P = struct
   let return v =
    fun [@bs] next ->
@@ -94,7 +88,4 @@ module P = struct
   let ( <*> ) = apply
   let ( >>| ) a f = map a ~f
   let ( >>= ) a f = bind a ~f
-  let ( let* ) a f = bind a ~f
-  let ( let+ ) a f = map a ~f
-  let ( and+ ) = both
 end

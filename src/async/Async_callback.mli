@@ -16,12 +16,6 @@ val ( >>| ) : 'a t -> ('a -> 'b) -> 'b t
 
 val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
 
-val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
-
-val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
-
-val ( and+ ) : 'a t -> 'b t -> ('a * 'b) t
-
 module P : sig
   val return : 'a Js.Promise.t -> 'a t
 
@@ -38,12 +32,6 @@ module P : sig
   val ( >>| ) : 'a t -> ('a -> 'b Js.Promise.t) -> 'b t
 
   val ( >>= ) : 'a t -> ('a -> 'b t Js.Promise.t) -> 'b t
-
-  val ( let* ) : 'a t -> ('a -> 'b t Js.Promise.t) -> 'b t
-
-  val ( let+ ) : 'a t -> ('a -> 'b Js.Promise.t) -> 'b t
-
-  val ( and+ ) : 'a t -> 'b t -> ('a * 'b) t
 end
 
 val act : 'a t -> 'a Js.Promise.t

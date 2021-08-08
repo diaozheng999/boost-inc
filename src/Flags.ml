@@ -27,3 +27,5 @@ let debug_redux = false
 let inspect_with_polyfill = true
 
 let debug_async_changeable = true
+
+let record_metrics = true
