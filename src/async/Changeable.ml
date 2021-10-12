@@ -6,6 +6,7 @@ type 'a action =
   | Read of 'a read_spec
   | Write of 'a
   | Act of string * (('a Variable.t -> unit Js.Promise.t)[@bs])
+  | Callback of 'a Async_callback.t
 
 type 'a t = {
   name : Unique.t;
@@ -71,6 +72,7 @@ let to_string changeable =
         {j|Read $(name)|j}
     | Write _ -> "Write"
     | Act (label, _) -> {j|Act $(label)|j}
+    | Callback _ -> "Callback"
   in
   {j|$(action) ($(name))|j}
 
@@ -84,9 +86,9 @@ let update_execution_context changeable =
 let update_statistics changeable =
   statistics.step_count <- statistics.step_count + 1;
   match changeable.action with
-    | Read _ -> statistics.read_count <- statistics.read_count + 1
-    | Write _ -> statistics.write_count <- statistics.write_count + 1
-    | _ -> ()
+  | Read _ -> statistics.read_count <- statistics.read_count + 1
+  | Write _ -> statistics.write_count <- statistics.write_count + 1
+  | _ -> ()
 
 let reset_statistics () =
   statistics.step_count <- 0;
@@ -95,8 +97,8 @@ let reset_statistics () =
 
 let rec act changeable dest =
   update_execution_context changeable;
-  if Flags.record_metrics then
-    update_statistics changeable;
+  if Flags.record_metrics then update_statistics changeable;
+
   if Flags.debug_async_changeable then
     Js.log4 "Executing" (to_string changeable) "at" dest.Variable.name;
   match changeable.action with
@@ -107,6 +109,8 @@ let rec act changeable dest =
           act (next x [@bs]) dest)
   | Write value -> Variable.write dest value
   | Act (_, f) -> f dest [@bs]
+  | Callback f ->
+      Async_callback.act f |> Js.Promise.then_ (fun _ -> Js.Promise.resolve ())
 
 let get_name label =
   match label with Some label -> label | None -> Unique.value gen

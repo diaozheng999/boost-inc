@@ -1,7 +1,5 @@
 open Boost
 
-type 'a changeable = 'a Variable.t -> unit Js.Promise.t
-
 type ('a, 'b) t = {
   next : (('a -> 'b Js.Promise.t)[@bs]) Memo_table.t;
   result : 'b Memo_table.t;
@@ -20,7 +18,7 @@ let mk_lift_cc_memo_gen = Unique.make_with_label ~label:"Memo$mk_lift_cc$copy"
 
 let mk_lift_cc_gen = Unique.make_with_label ~label:"Memo$mk_lift_cc"
 
-let mk_map_gen = Unique.make_with_label ~label:"Memo$mk_map"
+let mk_map_gen = Unique.make_with_label ~label:"Memo$map"
 
 let memoize pad key ~(next : 'a Async_callback.t) =
   let run_memoized f r =
@@ -65,9 +63,9 @@ let lift memo variable f =
   let key = Variable.address_of variable in
 
   let promise ~resolve ~reject:_ =
+    let result = Variable.make_intermediate () in
     let (_ : _ Js.Promise.t) =
       memoize memo.arg key ~next:(fun [@bs] next ->
-          let result = Variable.make_intermediate () in
           let resolved b =
             Variable.write result b >>= fun () ->
             memoize memo.result key ~next:(f result)
@@ -113,33 +111,17 @@ let mk_lift_cc ?name ?stack () =
       ~stack ~kind:"mk_lift_cc" (fun [@bs] dest ->
         lifted variable f >>= fun exec -> exec dest)
 
-let mk_map ?label ?stack a f =
-  let gen = Belt.Option.getWithDefault label mk_map_gen in
-  let name = Unique.string gen in
-  let stack = Changeable.Stack.push stack (Unique.of_str name) in
-
-  let lift = mk_lift ~name in
-
-  let mapped aref =
-    let changeable =
-      Changeable.read ~stack aref (fun aval ->
-          Changeable.make ~stack ~kind:"mk_map/map_and_write_result"
-            (fun [@bs] dest -> f aval >>= Variable.write dest))
-    in
-    Async_callback.return changeable
-  in
-  lift a mapped
-
 let map a f =
-  let stack =
-    Changeable.Stack.push None
-      (Unique.value (Unique.make_with_label ~label:"map"))
+  let name = Unique.string mk_map_gen in
+  let memo = create_memo ~name in
+  let b =
+    Variable.make_intermediate ~label:(Unique.make_with_label ~label:name) ()
   in
 
-  let mapper b =
-    let bref = Variable_prim.mem b in
-    mk_map ~stack a f
-    |> Js.Promise.then_ (fun changeable -> Changeable.act changeable bref)
-    |> Bs_interop.unstable_promise_then_unit_exec (fun () -> bref)
+  let map_result a = f a >>= Variable.write b in
+
+  let (_ : _ Js.Promise.t) =
+    lift memo a (fun result ->
+        Variable.read result map_result |> Async_callback.P.return)
   in
-  Variable.get_value a >>= f >>= mapper
+  b

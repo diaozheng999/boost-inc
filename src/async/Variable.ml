@@ -16,6 +16,8 @@ type 'a t = 'a variable
 
 let intermediate_gen = Unique.make_with_label ~label:"intermediate"
 
+let callback_gen = Unique.make_with_label ~label:"callback"
+
 external unsafe_prim_to_addr : 'a -> Address.t = "%identity"
 
 external address_of : 'a t -> Unique.t = "last_address" [@@bs.get]
